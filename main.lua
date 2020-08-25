@@ -1,9 +1,9 @@
 --[[
                            _   _     __    ___    _____                             __  
                           (_) | |   /_ |  / _ \  | ____|                           / /
-   ___   ___   _ __ ___    _  | |_   | | | (_) | | |__         _ __ ___   ___     / /
+   ___   ___   _ __ ___    _  | |_   | | | (_) | | |__         _ __ ___   ___     / / 
   / __| / __| | '_ ` _ \  | | | __|  | |  \__, | |___ \       | '_ ` _ \ / _ \   / /  
- | (__  \__ \ | | | | | | | | | |_   | |    / /   ___) |  _   | | | | | |  __/  / /  
+ | (__  \__ \ | | | | | | | | | |_   | |    / /   ___) |  _   | | | | | |  __/  / /   
   \___| |___/ |_| |_| |_| |_|  \__|  |_|   /_/   |____/  (_)  |_| |_| |_|\___| /_/    
    
    
@@ -71,6 +71,9 @@ local CPPanorama = panorama.loadstring([[
 					}
 				}
 			}
+		},
+		cp_PlaySound: (sound, type)=>{
+			$.DispatchEvent( 'PlaySoundEffect', sound, type);
 		}
 	}
 ]])();
@@ -201,12 +204,33 @@ ui.set_callback(CPLua.AutoCSGOStats.enable, function(self)
 end)
 -- END AutoCSGOStats
 
--- START CustomClanTag
+-- START MatchStartBeep cp_PlaySound('popup_accept_match_beep', 'MOUSE')
+CPLua.MatchStartBeep = {}
+CPLua.MatchStartBeep.enable = ui.new_checkbox('Lua', 'B', 'Match Start Beep')
+CPLua.MatchStartBeep.delay = ui.new_slider('Lua', 'B', 'Beep Delay', 1, 12, 6, true, 's')
+
+ui.set_visible(CPLua.MatchStartBeep.delay, false)
+
+ui.set_callback(CPLua.MatchStartBeep.enable, function(self)
+	local Status = ui.get(self)
+	ui.set_visible(CPLua.MatchStartBeep.delay, Status)
+end)
+
+client.set_event_callback('round_start', function()
+	if ( ui.get(CPLua.MatchStartBeep.enable) ) then
+		client.delay_call(ui.get(CPLua.MatchStartBeep.delay), function(){
+			CPPanorama.cp_PlaySound('popup_accept_match_beep', 'MOUSE')
+		})
+	end
+end)
+-- END MatchStartBeep
+
+--[[ START CustomClanTag
 CPLua.Clantag = {}
 CPLua.Clantag.last = ''
 CPLua.Clantag.enable = ui.new_checkbox('Lua', 'B', 'Clantag')
 
--- END CustomClanTag
+-- END CustomClanTag]]
 
 CPLua.Footer = ui.new_label('Lua', 'B', '=-------------  [   $CP Finish   ]  -------------=')
 
