@@ -319,13 +319,6 @@ local MessageRepeater = {}
 MessageRepeater.header = ui.new_label('Players', 'Adjustments', '=---------  [  $CP Adjustments  ]  ---------=')
 MessageRepeater.repeatMessages = ui.new_checkbox('Players', 'Adjustments', 'Repeat Messages')
 
-local RepeatMethods = {'Shift Case'}
-for i, v in pairs(style.trans) do
-	RepeatMethods[#RepeatMethods + 1] = i
-end
-MessageRepeater.repeatMethod = ui.new_combobox('Players', 'Adjustments', 'Repeat Method', RepeatMethods)
-ui.set_visible(MessageRepeater.repeatMethod, false)
-
 MessageRepeater.cache = {}
 
 ui.set_callback(MessageRepeater.repeatMessages, function(self)
@@ -453,3 +446,11 @@ function changeCase(original)
 	end
 	return table.concat(words, " ")
 end
+
+-- Generated at end for now! cause lazy
+local RepeatMethods = {'Shift Case'}
+for i, v in pairs(style.trans) do
+	RepeatMethods[#RepeatMethods + 1] = i .. transText(i, 'Preview')
+end
+MessageRepeater.repeatMethod = ui.new_combobox('Players', 'Adjustments', 'Repeat Method', RepeatMethods)
+ui.set_visible(MessageRepeater.repeatMethod, false)
