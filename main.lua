@@ -191,7 +191,7 @@ end)
 
 -- START AutoCSGOStats
 CPLua.AutoCSGOStats = {}
-CPLua.AutoCSGOStats.enable = ui.new_checkbox('Lua', 'B', 'Auto CSGOStats')
+CPLua.AutoCSGOStats.enable = ui.new_checkbox('Lua', 'B', 'Auto CSGOStats.gg')
 
 CPPanorama.cp_AutoCSGOStats.toggle(false);
 
