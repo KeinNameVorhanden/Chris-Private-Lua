@@ -309,6 +309,54 @@ local style = {
 	underline = '̲'
 }
 
+function transText(types, text)
+	if not style.trans[types] then return text end
+	local output = ''
+	for i=1, #text do
+		local char = text:sub(i,i)
+		output = output .. ( style.trans[types][style.letters:find(char)] or char )
+	end
+	return output
+end
+
+function underlineText(text)
+	local output = ''
+	for i=1, #text do
+		local char = text:sub(i,i)
+		if ( tonumber(char) == nil ) then
+			output = output .. char .. style.underline
+		else
+			output = output .. style.underline .. char
+		end
+	end
+	return output
+end
+
+function changeCaseWord(str)
+    local u = ""
+    for i = 1, #str do
+        if i % 2 == 1 then
+            u = u .. string.upper(str:sub(i, i))
+        else
+            u = u .. string.lower(str:sub(i, i))
+        end
+    end
+    return u
+end
+
+function changeCase(original)
+	local words = {}
+	for v in original:gmatch("%w+") do 
+		words[#words + 1] = v
+	end
+	for i,v in ipairs(words) do
+		words[i] = changeCaseWord(v)
+	end
+	return table.concat(words, " ")
+end
+
+
+
 -- UI References
 local PlayerList = ui.reference('Players', 'Players', 'Player list')
 local ResetAll = ui.reference('Players', 'Players', 'Reset all')
@@ -318,6 +366,14 @@ local ApplyToAll = ui.reference('Players', 'Adjustments', 'Apply to all')
 local MessageRepeater = {}
 MessageRepeater.header = ui.new_label('Players', 'Adjustments', '=---------  [  $CP Adjustments  ]  ---------=')
 MessageRepeater.repeatMessages = ui.new_checkbox('Players', 'Adjustments', 'Repeat Messages')
+
+local RepeatMethods = {'Shift Case'}
+for i, v in pairs(style.trans) do
+	RepeatMethods[#RepeatMethods + 1] = i .. transText(i, 'Preview')
+end
+MessageRepeater.repeatMethod = ui.new_combobox('Players', 'Adjustments', 'Repeat Method', RepeatMethods)
+ui.set_visible(MessageRepeater.repeatMethod, false)
+
 
 MessageRepeater.cache = {}
 
@@ -400,57 +456,3 @@ client.set_event_callback('cs_win_panel_match', function(e)
 	MessageRepeater.cache = {}
 	ui.set(MessageRepeater.repeatMessages, false)
 end)
-
-function transText(types, text)
-	if not style.trans[types] then return text end
-	local output = ''
-	for i=1, #text do
-		local char = text:sub(i,i)
-		output = output .. ( style.trans[types][style.letters:find(char)] or char )
-	end
-	return output
-end
-
-function underlineText(text)
-	local output = ''
-	for i=1, #text do
-		local char = text:sub(i,i)
-		if ( tonumber(char) == nil ) then
-			output = output .. char .. style.underline
-		else
-			output = output .. style.underline .. char
-		end
-	end
-	return output
-end
-
-function changeCaseWord(str)
-    local u = ""
-    for i = 1, #str do
-        if i % 2 == 1 then
-            u = u .. string.upper(str:sub(i, i))
-        else
-            u = u .. string.lower(str:sub(i, i))
-        end
-    end
-    return u
-end
-
-function changeCase(original)
-	local words = {}
-	for v in original:gmatch("%w+") do 
-		words[#words + 1] = v
-	end
-	for i,v in ipairs(words) do
-		words[i] = changeCaseWord(v)
-	end
-	return table.concat(words, " ")
-end
-
--- Generated at end for now! cause lazy
-local RepeatMethods = {'Shift Case'}
-for i, v in pairs(style.trans) do
-	RepeatMethods[#RepeatMethods + 1] = i .. transText(i, 'Preview')
-end
-MessageRepeater.repeatMethod = ui.new_combobox('Players', 'Adjustments', 'Repeat Method', RepeatMethods)
-ui.set_visible(MessageRepeater.repeatMethod, false)
