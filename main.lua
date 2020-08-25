@@ -369,7 +369,7 @@ MessageRepeater.repeatMessages = ui.new_checkbox('Players', 'Adjustments', 'Repe
 
 local RepeatMethods = {'Shift Case'}
 for i, v in pairs(style.trans) do
-	RepeatMethods[#RepeatMethods + 1] = i .. transText(i, 'Preview')
+	RepeatMethods[#RepeatMethods + 1] = i
 end
 MessageRepeater.repeatMethod = ui.new_combobox('Players', 'Adjustments', 'Repeat Method', RepeatMethods)
 ui.set_visible(MessageRepeater.repeatMethod, false)
