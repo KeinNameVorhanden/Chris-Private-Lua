@@ -80,7 +80,7 @@ local CPLua = {
 } 
 CPLua.Header = ui.new_label('Lua', 'B', '=--------------  [   $CP Start   ]  --------------=')
 
--- START LegitResolver
+--[[ START LegitResolver
 CPLua.LegitResolver = {}
 CPLua.LegitResolver.enable = ui.new_checkbox('Lua', 'B', 'Legit AA Resolver')
 CPLua.LegitResolver.hotkey = ui.new_hotkey('Lua', 'B', 'Legit AA Resolver', true)
@@ -89,7 +89,7 @@ ui.set_callback(CPLua.LegitResolver.enable, function(self)
 	local Status = ui.get(self)
 	print(Status)
 end)
--- END LegitResolver
+-- END LegitResolver]]
 
 -- START AutoAccept
 CPLua.AutoAccept = {}
