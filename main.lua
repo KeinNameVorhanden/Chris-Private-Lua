@@ -316,38 +316,41 @@ local style = {
 		subscript = {"ₐ","b","c","d","ₑ","f","g","ₕ","ᵢ","ⱼ","ₖ","ₗ","ₘ","ₙ","ₒ","ₚ","q","ᵣ","ₛ","ₜ","ᵤ","ᵥ","w","ₓ","y","z", "ₐ","B","C","D","ₑ","F","G","ₕ","ᵢ","ⱼ","ₖ","ₗ","ₘ","ₙ","ₒ","ₚ","Q","ᵣ","ₛ","ₜ","ᵤ","ᵥ","W","ₓ","Y","Z", "₀","₁","₂","₃","₄","₅","₆","₇","₈","₉","'"," "},
 		superscript = {"ᵃ","ᵇ","ᶜ","ᵈ","ᵉ","ᶠ","ᵍ","ʰ","ⁱ","ʲ","ᵏ","ˡ","ᵐ","ⁿ","ᵒ","ᵖ","q","ʳ","ˢ","ᵗ","ᵘ","ᵛ","ʷ","ˣ","ʸ","ᶻ", "ᴬ","ᴮ","ᶜ","ᴰ","ᴱ","ᶠ","ᴳ","ᴴ","ᴵ","ᴶ","ᴷ","ᴸ","ᴹ","ᴺ","ᴼ","ᴾ","Q","ᴿ","ˢ","ᵀ","ᵁ","ⱽ","ᵂ","ˣ","ʸ","ᶻ", "⁰","¹","²","³","⁴","⁵","⁶","⁷","⁸","⁹","'"," "},
 		inverted = {"ɐ","q","ɔ","p","ǝ","ɟ","ƃ","ɥ","ı","ɾ","ʞ","ן","ɯ","u","o","d","b","ɹ","s","ʇ","n","ʌ","ʍ","x","ʎ","z", "ɐ","q","ɔ","p","ǝ","ɟ","ƃ","ɥ","ı","ɾ","ʞ","ן","ɯ","u","o","d","b","ɹ","s","ʇ","n","𐌡","ʍ","x","ʎ","z", "0","1","2","3","4","5","6","7","8","9",","," "},
-	},
-	transText = function(types, text)
-		if not style.trans[types] then return text end
-		local output = ''
-		for i=1, #text do
-			local char = text:sub(i,i)
-			output = output .. ( style.trans[types][style.letters:find(char)] or char )
-		end
-		return output
-	end,
-	changeCaseWord = function(str)
-		local u = ""
-		for i = 1, #str do
-			if i % 2 == 1 then
-				u = u .. string.upper(str:sub(i, i))
-			else
-				u = u .. string.lower(str:sub(i, i))
-			end
-		end
-		return u
-	end,
-	changeCase = function(original)
-		local words = {}
-		for v in original:gmatch("%w+") do 
-			words[#words + 1] = v
-		end
-		for i,v in ipairs(words) do
-			words[i] = style.changeCaseWord(v)
-		end
-		return table.concat(words, " ")
-	end
+	}
 }
+
+function transText(types, text)
+	if not style.trans[types] then return text end
+	local output = ''
+	for i=1, #text do
+		local char = text:sub(i,i)
+		output = output .. ( style.trans[types][style.letters:find(char)] or char )
+	end
+	return output
+end
+
+function changeCaseWord(str)
+	local u = ""
+	for i = 1, #str do
+		if i % 2 == 1 then
+			u = u .. string.upper(str:sub(i, i))
+		else
+			u = u .. string.lower(str:sub(i, i))
+		end
+	end
+	return u
+end
+
+function changeCase(original)
+	local words = {}
+	for v in original:gmatch("%w+") do 
+		words[#words + 1] = v
+	end
+	for i,v in ipairs(words) do
+		words[i] = changeCaseWord(v)
+	end
+	return table.concat(words, " ")
+end
 
 -- UI References
 local PlayerList = ui.reference('Players', 'Players', 'Player list')
@@ -366,9 +369,7 @@ end
 MessageRepeater.repeatMethod = ui.new_combobox('Players', 'Adjustments', 'Repeat Method', RepeatMethods)
 ui.set_visible(MessageRepeater.repeatMethod, false)
 
-
 MessageRepeater.cache = {}
-
 ui.set_callback(MessageRepeater.repeatMessages, function(self)
 	local Status = ui.get(self)
 	local Player = ui.get(PlayerList)
@@ -434,9 +435,9 @@ client.set_event_callback('player_chat', function (e)
 			local Message = text
 			
 			if ( Method == 'Shift Case' ) then
-				Message = style.changeCase(text)
+				Message = changeCase(text)
 			else
-				Message = style.transText(Method, text)
+				Message = transText(Method, text)
 			end
 			
 			client.exec("say ", Message)
