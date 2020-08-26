@@ -78,6 +78,7 @@ local CPPanorama = panorama.loadstring([[
 	}
 ]])();
 
+-- [[ LUA TAB ]]
 local CPLua = {
 	loops = {}
 } 
@@ -284,23 +285,7 @@ client.set_event_callback('player_footstep', function(e)
 end)
 ]]
 
--- Temporary Merge
---[[
-                           _   _     __    ___    _____                             __  
-                          (_) | |   /_ |  / _ \  | ____|                           / /
-   ___   ___   _ __ ___    _  | |_   | | | (_) | | |__         _ __ ___   ___     / /
-  / __| / __| | '_ ` _ \  | | | __|  | |  \__, | |___ \       | '_ ` _ \ / _ \   / /  
- | (__  \__ \ | | | | | | | | | |_   | |    / /   ___) |  _   | | | | | |  __/  / /  
-  \___| |___/ |_| |_| |_| |_|  \__|  |_|   /_/   |____/  (_)  |_| |_| |_|\___| /_/    
-   
-   
-    Script Name: Repeat Chat
-    Script Author: csmit195
-    Script Version: 1.0
-    Script Description: Don't even fucking ask.
-]]
-
--- Style Stuff
+-- [[ PLAYER TAB ]]
 local style = {
 	letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' ",
 	trans = {
@@ -335,7 +320,7 @@ local style = {
 	underline = '̲'
 }
 
-function transText(types, text)
+local function transText(types, text)
 	if not style.trans[types] then return text end
 	local output = ''
 	for i=1, #text do
@@ -345,7 +330,7 @@ function transText(types, text)
 	return output
 end
 
-function underlineText(text)
+local function underlineText(text)
 	local output = ''
 	for i=1, #text do
 		local char = text:sub(i,i)
@@ -358,7 +343,7 @@ function underlineText(text)
 	return output
 end
 
-function changeCaseWord(str)
+local function changeCaseWord(str)
     local u = ""
     for i = 1, #str do
         if i % 2 == 1 then
@@ -370,7 +355,7 @@ function changeCaseWord(str)
     return u
 end
 
-function changeCase(original)
+local function changeCase(original)
 	local words = {}
 	for v in original:gmatch("%w+") do 
 		words[#words + 1] = v
@@ -380,8 +365,6 @@ function changeCase(original)
 	end
 	return table.concat(words, " ")
 end
-
-
 
 -- UI References
 local PlayerList = ui.reference('Players', 'Players', 'Player list')
