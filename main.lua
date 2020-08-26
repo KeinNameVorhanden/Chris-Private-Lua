@@ -218,9 +218,9 @@ end)
 
 client.set_event_callback('round_start', function()
 	if ( ui.get(CPLua.MatchStartBeep.enable) ) then
-		client.delay_call(ui.get(CPLua.MatchStartBeep.delay), function(){
+		client.delay_call(ui.get(CPLua.MatchStartBeep.delay), function()
 			CPPanorama.cp_PlaySound('popup_accept_match_beep', 'MOUSE')
-		})
+		end)
 	end
 end)
 -- END MatchStartBeep
