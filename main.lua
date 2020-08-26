@@ -207,7 +207,7 @@ end)
 -- START MatchStartBeep cp_PlaySound('popup_accept_match_beep', 'MOUSE')
 CPLua.MatchStartBeep = {}
 CPLua.MatchStartBeep.enable = ui.new_checkbox('Lua', 'B', 'Match Start Beep')
-CPLua.MatchStartBeep.delay = ui.new_slider('Lua', 'B', '% of Match Freezetime', 0, 100, 7ye0, true, '%')
+CPLua.MatchStartBeep.delay = ui.new_slider('Lua', 'B', '% of Match Freezetime', 0, 100, 75, true, '%')
 
 ui.set_visible(CPLua.MatchStartBeep.delay, false)
 
@@ -218,7 +218,7 @@ end)
 
 client.set_event_callback('round_start', function()
 	if ( ui.get(CPLua.MatchStartBeep.enable) ) then
-		local mp_freezetime = cvar.mp_freezetime
+		local mp_freezetime = cvar.mp_freezetime:get_int()
 		local percent = ui.get(CPLua.MatchStartBeep.delay) / 100
 		client.delay_call(mp_freezetime * percent, function()
 			CPPanorama.cp_PlaySound('popup_accept_match_beep', 'MOUSE')
