@@ -430,7 +430,7 @@ client.set_event_callback('player_chat', function (e)
 	if ( not e.teamonly ) then
 		local entity, name, text = e.entity, e.name, e.text
 		
-		if ( MessageRepeater.cache[entity] and MessageRepeater.cache[entity].Status and MessageRepeater.cache[entity].Method ) then
+		if ( MessageRepeater.cache[entity] and MessageRepeater.cache[entity].Status and MessageRepeater.cache[entity].Method and entity.is_enemy(entity) ) then
 			local Method = MessageRepeater.cache[entity].Method
 			local Message = text
 			
