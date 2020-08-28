@@ -272,7 +272,7 @@ function Initiate()
 			end
 		end, 0},
 		{'wins', 60, function()
-			return entity.get_prop(entity.get_player_resource(entity.get_local_player()), 'm_iCompetitiveWins') or ''
+			return entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveWins', entity.get_local_player()) or ''
 		end, 0},
 		{'hp', 0.5, function()
 			return entity.get_prop(entity.get_local_player(), 'm_iHealth') or 0
@@ -280,20 +280,25 @@ function Initiate()
 		{'amr', 0.5, function()
 			return entity.get_prop(entity.get_local_player(), 'm_ArmorValue') or 0
 		end, 0},
+		{'loc', 0.5, function()
+			return entity.get_prop(entity.get_local_player(), 'm_szLastPlaceName') or ''
+		end, 0},
 		{'kills', 1, function()
-			return entity.get_prop(entity.get_local_player(), 'm_iMatchStats_Kills') or 0
+			return entity.get_prop(entity.get_player_resource(), 'm_iKills', entity.get_local_player()) or 0
 		end, 0},
 		{'deaths', 1, function()
-			return entity.get_prop(entity.get_local_player(), 'm_iMatchStats_Deaths') or 0
+			return entity.get_prop(entity.get_player_resource(), 'm_iDeaths', entity.get_local_player()) or 0
 		end, 0},
 		{'assists', 1, function()
-			return entity.get_prop(entity.get_local_player(), 'm_iMatchStats_Assists') or 0
+			return entity.get_prop(entity.get_player_resource(), 'm_iAssists', entity.get_local_player()) or 0
 		end, 0},
 		{'headchance', 1, function()
 			local LocalPlayer = entity.get_local_player()
-			local TotalKills = entity.get_prop(entity.get_local_player(), 'm_iMatchStats_Kills') or 0
-			local HeadshotKills = entity.get_prop(entity.get_local_player(), 'm_iMatchStats_HeadShotKills') or 0
-			return math.ceil( (HeadshotKills / TotalKills) * 100 )
+			local TotalKills = CPLua.Clantag.processedData.kills
+			local HeadshotKills = entity.get_prop(entity.get_player_resource(), 'm_iMatchStats_HeadShotKills_Total', entity.get_local_player())
+			if ( TotalKills and HeadshotKills ) then				
+				return math.ceil( (HeadshotKills / TotalKills) * 100 )
+			end
 		end, 0},
 		{'c4', 1, function()
 			-- Print C4 if has c4
@@ -573,19 +578,19 @@ function Initiate()
 
 	ui.set_callback(ApplyToAll, function(self)
 		for Player=1, globals.maxplayers() do
-			local Status = ui.get(MessageRepeater.repeatMessages)
-			MessageRepeater.cache[Player] = {}
-			MessageRepeater.cache[Player].Status = true
-			MessageRepeater.cache[Player].Method = ui.get(MessageRepeater.repeatMethod)
+			if ( entity.is_enemy(entity) ) then
+				MessageRepeater.cache[Player] = {}
+				MessageRepeater.cache[Player].Status = true
+				MessageRepeater.cache[Player].Method = ui.get(MessageRepeater.repeatMethod)
+			end
 		end
 	end)
 
 	client.set_event_callback('player_chat', function (e)
 		if ( not e.teamonly ) then
-			local entity, name, text = e.entity, e.name, e.text
-			
-			if ( MessageRepeater.cache[entity] and MessageRepeater.cache[entity].Status and MessageRepeater.cache[entity].Method and entity.is_enemy(entity) ) then
-				local Method = MessageRepeater.cache[entity].Method
+			local ent, name, text = e.entity, e.name, e.text
+			if ( entity.is_enemy(ent) and MessageRepeater.cache[ent] ~= nil and MessageRepeater.cache[ent].Status and MessageRepeater.cache[ent].Method ) then
+				local Method = MessageRepeater.cache[ent].Method
 				local Message = text
 				
 				if ( Method == 'Shift Case' ) then
