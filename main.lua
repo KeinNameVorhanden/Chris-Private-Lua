@@ -17,7 +17,7 @@ local CompetitiveMatchAPI = js.CompetitiveMatchAPI
 local GameStateAPI = js.GameStateAPI
 local FriendsListAPI = js.FriendsListAPI
 
-local csgo_weapons = require "gamesense/csgo_weapons"
+local csgo_weapons_success, csgo_weapons = pcall(require, 'gamesense/csgo_weapons')
 
 local CPPanorama = panorama.loadstring([[
 	LocalSteamID = MyPersonaAPI.GetXuid();
@@ -299,6 +299,8 @@ function Initiate()
 			-- Print C4 if has c4
 		end, 0},
 		{'wep', 0.25, function()
+			if ( not csgo_weapons_success ) then return end
+
 			local LocalPlayer = entity.get_local_player()
 
 			local WeaponENT = entity.get_player_weapon(LocalPlayer)
