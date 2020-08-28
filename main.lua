@@ -491,6 +491,19 @@ function Initiate()
 	end)
 	-- END CustomClanTag
 
+	-- START ReportTool
+	CPLua.ReportTool = {}
+	CPLua.ReportTool.enable = ui.new_checkbox('Lua', 'B', 'Report Tool')
+	CPLua.ReportTool.types = ui.new_multiselect('Lua', 'B', 'Types', {'textabuse','voiceabuse','grief','aimbot','wallhack','speedhack'})
+	ui.set_callback(CPLua.ReportTool.enable, function(self)
+		local Status = ui.get(self)
+		ui.set_visible(CPLua.ReportTool.types, Status)
+	end)
+	ui.set_visible(CPLua.ReportTool.types, false)
+	-- END ReportTool
+
+
+
 	-- START DebugOptions
 	CPLua.DebugOptions = {}
 	CPLua.DebugOptions.enable = ui.new_checkbox('Lua', 'B', 'Debug Mode (console)')
