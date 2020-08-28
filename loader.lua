@@ -8,7 +8,7 @@ local CPUpdater = panorama.loadstring([[
 	CPUpdater.GetLatest = ()=>{
 		CPUpdater.updating = true;
 		CPUpdater.finished = false;
-		$.AsyncWebRequest("https://raw.githubusercontent.com/csmit195/Chris-Private-Lua/master/%24CP.lua",
+		$.AsyncWebRequest("https://raw.githubusercontent.com/csmit195/Chris-Private-Lua/master/main.lua",
 			{
 				type:"GET",
 				complete:function(e){

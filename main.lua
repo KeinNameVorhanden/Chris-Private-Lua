@@ -19,6 +19,11 @@ local FriendsListAPI = js.FriendsListAPI
 
 local csgo_weapons_success, csgo_weapons = pcall(require, 'gamesense/csgo_weapons')
 
+-- Options
+local Options = {
+	debugMode = false
+}
+
 local CPPanorama = panorama.loadstring([[
 	LocalSteamID = MyPersonaAPI.GetXuid();
 
@@ -89,17 +94,6 @@ function Initiate()
 	} 
 	CPLua.Header = ui.new_label('Lua', 'B', '=--------------  [   $CP Start   ]  --------------=')
 
-	--[[ START LegitResolver
-	CPLua.LegitResolver = {}
-	CPLua.LegitResolver.enable = ui.new_checkbox('Lua', 'B', 'Legit AA Resolver')
-	CPLua.LegitResolver.hotkey = ui.new_hotkey('Lua', 'B', 'Legit AA Resolver', true)
-
-	ui.set_callback(CPLua.LegitResolver.enable, function(self)
-		local Status = ui.get(self)
-		print(Status)
-	end)
-	-- END LegitResolver]]
-
 	-- START AutoAccept
 	CPLua.AutoAccept = {}
 	CPLua.AutoAccept.originalAutoAccept = ui.reference('MISC', 'Miscellaneous', 'Auto-accept matchmaking')
@@ -153,14 +147,14 @@ function Initiate()
 
 	function CPLua.DerankScore.Reconnect()
 		if CompetitiveMatchAPI.HasOngoingMatch() then
-			print('reconnecting')
+			printDebug('reconnecting')
 			return CompetitiveMatchAPI.ActionReconnectToOngoingMatch( '', '', '', '' ), derankcheck
 		end
 	end
 
 	client.set_event_callback("round_freeze_end", function()
 		if ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('Round Start') then
-			print('Trying the disconnect')
+			printDebug('Trying the disconnect')
 			client.delay_call(0, client.exec, "disconnect")
 			client.delay_call(1, function()
 				CPLua.DerankScore.Reconnect()
@@ -189,10 +183,10 @@ function Initiate()
 		end
 	end
 	client.set_event_callback('player_connect_full', function(e)
-		print('someone connected')
+		printDebug('someone connected')
 		if ( entity.get_local_player() == client.userid_to_entindex(e.userid) ) then
 			CPLua.DerankScore.Deranking = false
-			print('derank false')
+			printDebug('derank false')
 		end
 	end)
 	-- END DerankScore
@@ -212,13 +206,101 @@ function Initiate()
 	-- START MatchStartBeep cp_PlaySound('popup_accept_match_beep', 'MOUSE')
 	CPLua.MatchStartBeep = {}
 	CPLua.MatchStartBeep.enable = ui.new_checkbox('Lua', 'B', 'Match Start Beep')
+	CPLua.MatchStartBeep.repeatTimes = ui.new_slider('Lua', 'B', 'Times (x)', 1, 30, 1)
+	CPLua.MatchStartBeep.repeatInterval = ui.new_slider('Lua', 'B', 'Interval (ms)', 0, 1000, 250, true, 'ms')
 	CPLua.MatchStartBeep.delay = ui.new_slider('Lua', 'B', '% of Match Freezetime', 0, 100, 75, true, '%')
 
+	CPLua.MatchStartBeep.sounds = {
+		{'popup_accept_match_beep', 'Default (Beep)'},
+		{'UIPanorama.generic_button_press', 'Generic Button'},
+		{'mainmenu_press_home', 'Home Button'},
+		{'tab_mainmenu_inventory', 'Inventory Tab'},
+		{'tab_settings_settings', 'Settings Tab'},
+		{'UIPanorama.mainmenu_press_quit', 'Quit Button'},
+		{'sticker_applySticker', 'Sticker Apply'},
+		{'sticker_nextPosition', 'Sticker Next Position'},
+		{'container_sticker_ticker', 'Container Sticker Ticker'},
+		{'container_weapon_ticker', 'Container Weapon Ticker'},
+		{'container_countdown', 'Container Countdown'},
+		{'inventory_inspect_sellOnMarket', 'Sell on Market'},
+		{'UIPanorama.sidemenu_select', 'Sidemenu Select'},
+		{'inventory_item_popupSelect', 'Item Popup'},
+		{'UIPanorama.stats_reveal', 'Stats Reveal'},
+		{'ItemRevealSingleLocalPlayer', 'Reveal Singleplayer'},
+		{'ItemDropCommon', 'Item Drop (Common)'},
+		{'ItemDropUncommon', 'Item Drop (Uncommon)'},
+		{'ItemDropMythical', 'Item Drop (Mythical)'},
+		{'ItemDropLegendary', 'Item Drop (Legendary)'},
+		{'ItemDropAncient', 'Item Drop (Ancient)'},
+		{'UIPanorama.XP.Ticker', 'XP Ticker'},
+		{'UIPanorama.XP.BarFull', 'XP Bar Full'},
+		{'UIPanorama.XP.NewRank', 'XP New Rank'},
+		{'UIPanorama.XP.NewSkillGroup', 'New Skill Group'},
+		{'UIPanorama.submenu_leveloptions_slidein', 'Map Vote SlideIn'},
+		{'UIPanorama.submenu_leveloptions_select', 'Map Vote Select'},
+		{'mainmenu_press_GO', 'Matchmaking Search'},
+		{'buymenu_select', 'Buy Select'},
+		{'UIPanorama.gameover_show', 'Gameover'},
+		{'PanoramaUI.Lobby.Joined', 'Lobby Joined'},
+		{'PanoramaUI.Lobby.Left', 'Lobby Left'},
+		{'inventory_item_select', 'Inventory Select'},
+		{'UIPanorama.inventory_new_item_accept', 'Inventory New Item'},
+		{'sidemenu_slidein', 'Sidemenu Slidein'},
+		{'sidemenu_slideout', 'Sidemenu Slideout'},
+		{'UIPanorama.inventory_new_item', 'Inventory New Item'},
+		{'inventory_inspect_weapon', 'Inventory Inspect Weapon'},
+		{'inventory_inspect_knife', 'Inventory Inspect Knife'},
+		{'inventory_inspect_sticker', 'Inventory Inspect Sticker'},
+		{'inventory_inspect_graffiti', 'Inventory Inspect Graffiti'},
+		{'inventory_inspect_musicKit', 'Inventory Inspect Music Kit'},
+		{'inventory_inspect_coin', 'Inventory Inspect Coin'},
+		{'inventory_inspect_gloves', 'Inventory Inspect Gloves'},
+		{'inventory_inspect_close', 'Inventory Inspect Close'},
+		{'popup_accept_match_waitquiet', 'Match Accept Tick'},
+		{'popup_accept_match_person', 'Match Accept Person'},
+		{'popup_accept_match_confirmed', 'Match Confirmed'},
+		{'XrayStart', 'XRay Start'},
+		{'rename_purchaseSuccess', 'Nametag Success'},
+		{'rename_select', 'Nametag Select'},
+ 		{'rename_teletype', 'Nametag Teletype'},
+		{'weapon_selectReplace', 'Weapon Select Replace'},
+		{'UIPanorama.popup_newweapon', 'New Weapon Popup'}
+	}
+	local ProcessedSounds = {}
+	local ReferenceSounds = {}
+	for index, Sound in pairs(CPLua.MatchStartBeep.sounds) do
+		ProcessedSounds[#ProcessedSounds + 1] = Sound[2]
+		ReferenceSounds[Sound[2]] = Sound[1]
+	end	
+	CPLua.MatchStartBeep.sounds = ui.new_listbox('Lua', 'B', 'Sounds', ProcessedSounds)
+	CPLua.MatchStartBeep.testsound = ui.new_button('Lua', 'B', 'Test Sound', function()
+		local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1]
+		print(SelectedSound, '>', ReferenceSounds[SelectedSound])
+		if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
+			CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+		end
+	end)
+
 	ui.set_visible(CPLua.MatchStartBeep.delay, false)
+	ui.set_visible(CPLua.MatchStartBeep.sounds, false)
+	ui.set_visible(CPLua.MatchStartBeep.testsound, false)
+
+	ui.set_visible(CPLua.MatchStartBeep.repeatTimes, false)
+	ui.set_visible(CPLua.MatchStartBeep.repeatInterval, false)
 
 	ui.set_callback(CPLua.MatchStartBeep.enable, function(self)
 		local Status = ui.get(self)
 		ui.set_visible(CPLua.MatchStartBeep.delay, Status)
+		ui.set_visible(CPLua.MatchStartBeep.sounds, Status)
+		ui.set_visible(CPLua.MatchStartBeep.testsound, Status)
+
+		ui.set_visible(CPLua.MatchStartBeep.repeatTimes, Status)
+		ui.set_visible(CPLua.MatchStartBeep.repeatInterval, ui.get(CPLua.MatchStartBeep.repeatTimes) ~= 1 and Status)
+	end)
+
+	ui.set_callback(CPLua.MatchStartBeep.repeatTimes, function(self)
+		local Status = ui.get(self)
+		ui.set_visible(CPLua.MatchStartBeep.repeatInterval, Status ~= 1)
 	end)
 
 	client.set_event_callback('round_start', function()
@@ -226,7 +308,21 @@ function Initiate()
 			local mp_freezetime = cvar.mp_freezetime:get_int()
 			local percent = ui.get(CPLua.MatchStartBeep.delay) / 100
 			client.delay_call(mp_freezetime * percent, function()
-				CPPanorama.cp_PlaySound('popup_accept_match_beep', 'MOUSE')
+				local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1] or 'Default (Beep)'
+				if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
+					local Times = ui.get(CPLua.MatchStartBeep.repeatTimes)
+					local Interval = ui.get(CPLua.MatchStartBeep.repeatInterval)
+					if ( Times == 1 ) then
+						CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+					else
+						for i=1, Times do
+							client.delay_call(Times == 1 and 0 or ( ( i - 1 ) * Interval ) / 1000, function()
+								print('done')
+								CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+							end)
+						end
+					end
+				end
 			end)
 		end
 	end)
@@ -264,14 +360,14 @@ function Initiate()
 
 	-- format {tag, refreshrate, updatefunc}
 	CPLua.Clantag.data = {
-		{'rank', 60, function()
+		{'rank', 300, function()
 			local Rank = entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveRanking', entity.get_local_player())
-			print('RANK', Rank, CPLua.Clantag.ranks[Rank+1])
+			printDebug('RANK', Rank, CPLua.Clantag.ranks[Rank+1])
 			if ( Rank ) then
 				return CPLua.Clantag.ranks[Rank+1]
 			end
 		end, 0},
-		{'wins', 60, function()
+		{'wins', 300, function()
 			return entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveWins', entity.get_local_player()) or ''
 		end, 0},
 		{'hp', 0.5, function()
@@ -354,6 +450,7 @@ function Initiate()
 
 	ui.set_callback(CPLua.Clantag.enable, function(self)
 		local Status = ui.get(self)
+		client.set_clan_tag('')
 		ui.set_visible(CPLua.Clantag.template, Status)
 	end)
 
@@ -376,7 +473,7 @@ function Initiate()
 				value[4] = globals.curtime() + delay
 			end
 		end
-		local newClantag = ui.get(CPLua.Clantag.template) % CPLua.Clantag.processedData
+		local newClantag = processTags(ui.get(CPLua.Clantag.template), CPLua.Clantag.processedData)
 		if ( CPLua.Clantag.last ~= newClantag ) then
 			client.set_clan_tag(newClantag)
 			CPLua.Clantag.last = newClantag
@@ -394,6 +491,15 @@ function Initiate()
 	end)
 	-- END CustomClanTag
 
+	-- START DebugOptions
+	CPLua.DebugOptions = {}
+	CPLua.DebugOptions.enable = ui.new_checkbox('Lua', 'B', 'Debug Mode (console)')
+	ui.set_callback(CPLua.DebugOptions.enable, function(self)
+		local Status = ui.get(self)
+		Options.debugMode = Status
+	end)
+	-- END DebugOptions
+
 	CPLua.Footer = ui.new_label('Lua', 'B', '=-------------  [   $CP Finish   ]  -------------=')
 
 	-- START DrawLoops
@@ -403,46 +509,6 @@ function Initiate()
 		end
 	end)
 	-- END DrawLoops
-
-	--[[ Clantag Logic
-	client.set_event_callback('paint', function()
-		local Enabled = ui.get(CPLua.Clantag.enable)
-
-		if ( Enabled ) then		
-			local newClantag = 
-			if ( CPLua.Clantag.last ~= newClantag ) then
-				client.set_clan_tag(newClantag)
-				CPLua.Clantag.last = newClantag
-			end
-		else
-			if ( CPLua.Clantag.last ~= '' ) then
-				client.set_clan_tag('')
-				CPLua.Clantag.last = ''
-				print('changed to empty')
-			end
-		end
-	end)
-	]]
-
-	--[[local LocalPlayer = entity.get_local_player()
-
-	client.set_event_callback('player_footstep', function(e)
-		local UserEntity = client.userid_to_entindex(e.userid)
-		
-		if ( UserEntity == LocalPlayer ) then
-			local PlayerName = entity.get_player_name(UserEntity)
-			
-			-- SetEntProp(client, Prop_Data, "m_fFlags", 4);
-			--entity.set_prop(UserEntity, 'm_fFlags', 4)
-			
-			local flags = entity.get_prop( UserEntity, "m_fFlags" )
-			
-			if ( flags ) then
-				print(flags)
-			end
-		end
-	end)
-	]]
 
 	-- [[ PLAYER TAB ]]
 	local style = {
@@ -578,7 +644,7 @@ function Initiate()
 
 	ui.set_callback(ApplyToAll, function(self)
 		for Player=1, globals.maxplayers() do
-			if ( entity.is_enemy(entity) ) then
+			if ( entity.is_enemy(Player) ) then
 				MessageRepeater.cache[Player] = {}
 				MessageRepeater.cache[Player].Status = true
 				MessageRepeater.cache[Player].Method = ui.get(MessageRepeater.repeatMethod)
@@ -611,15 +677,20 @@ function Initiate()
 end
 
 -- Utilities / Libraries
-getmetatable("").__mod = function(str, vars)
+function processTags(str, vars)
 	if not vars then
-	  vars = str
-	  str = vars[1]
-	end
-	return (string.gsub(str, "({([^}]+)})",
-	  function(whole,i)
-		return vars[i] or whole
-	  end))
+		vars = str
+		str = vars[1]
+	  end
+	  return (string.gsub(str, "({([^}]+)})",
+		function(whole,i)
+		  return vars[i] or whole
+		end))
+end
+
+function printDebug(...)
+	if ( not Options.debugMode ) then return end
+	printDebug(...)
 end
 
 local frametimes = {}
