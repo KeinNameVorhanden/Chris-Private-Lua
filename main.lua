@@ -494,15 +494,55 @@ function Initiate()
 	-- START ReportTool
 	CPLua.ReportTool = {}
 	CPLua.ReportTool.enable = ui.new_checkbox('Lua', 'B', 'Report Tool')
-	CPLua.ReportTool.types = ui.new_multiselect('Lua', 'B', 'Types', {'textabuse','voiceabuse','grief','aimbot','wallhack','speedhack'})
+	
+	local ReportTypes = {
+		{'textabuse', 'Comms Abuse'},
+		{'voiceabuse', 'Voice Abuse'},
+		{'grief', 'Griefing'},
+		{'aimbot', 'Aim Hacking'},
+		{'wallhack', 'Wall Hacking'},
+		{'speedhack', 'Other Hacking'}
+	}
+	local ReportTypeNames = {}
+	local ReportTypeRef = {}
+	for index, ReportType in ipairs(ReportTypes) do
+		ReportTypeNames[#ReportTypeNames + 1] = ReportType[2]
+		ReportTypeRef[ReportType[2]] = ReportType[1]
+	end
+	CPLua.ReportTool.types = ui.new_multiselect('Lua', 'B', 'Types', ReportTypeNames)
+	CPLua.ReportTool.submit = ui.new_button('Lua', 'B', 'Report!', function()
+		local Types = ui.get(CPLua.ReportTool.types)
+		local ReportTypes = ''
+		for i, v in pairs(Types) do
+			ReportTypes = ( i == 1 and ReportTypeRef[v] or ReportTypes..','..ReportTypeRef[v] )
+		end
+
+		local ReportQueue = {}
+		for Player=1, globals.maxplayers() do
+			local SteamXUID = GameStateAPI.GetPlayerXuidStringFromEntIndex(Player)
+			if ( SteamXUID:len() > 5 and entity.is_enemy(Player) ) then
+				ReportQueue[#ReportQueue + 1] = SteamXUID
+			end
+		end
+
+		-- Actual Reporting
+		for index, Reportee in ipairs(ReportQueue) do
+			client.delay_call((index - 1) * 1, function()
+				GameStateAPI.SubmitPlayerReport(Reportee, ReportTypes)
+			end)
+		end
+	end)
+	
+
+
 	ui.set_callback(CPLua.ReportTool.enable, function(self)
 		local Status = ui.get(self)
 		ui.set_visible(CPLua.ReportTool.types, Status)
+		ui.set_visible(CPLua.ReportTool.submit, Status)
 	end)
 	ui.set_visible(CPLua.ReportTool.types, false)
+	ui.set_visible(CPLua.ReportTool.submit, false)
 	-- END ReportTool
-
-
 
 	-- START DebugOptions
 	CPLua.DebugOptions = {}
