@@ -275,7 +275,7 @@ function Initiate()
 	CPLua.MatchStartBeep.sounds = ui.new_listbox('Lua', 'B', 'Sounds', ProcessedSounds)
 	CPLua.MatchStartBeep.testsound = ui.new_button('Lua', 'B', 'Test Sound', function()
 		local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1]
-		print(SelectedSound, '>', ReferenceSounds[SelectedSound])
+		printDebug(SelectedSound, '>', ReferenceSounds[SelectedSound])
 		if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
 			CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
 		end
@@ -317,7 +317,7 @@ function Initiate()
 					else
 						for i=1, Times do
 							client.delay_call(Times == 1 and 0 or ( ( i - 1 ) * Interval ) / 1000, function()
-								print('done')
+								printDebug('done')
 								CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
 							end)
 						end
@@ -397,6 +397,7 @@ function Initiate()
 			end
 		end, 0},
 		{'c4', 1, function()
+			CPLua.Clantag.last = '' -- TEMP
 			-- Print C4 if has c4
 		end, 0},
 		{'wep', 0.25, function()
@@ -450,12 +451,16 @@ function Initiate()
 
 	ui.set_callback(CPLua.Clantag.enable, function(self)
 		local Status = ui.get(self)
-		client.set_clan_tag('')
+		if ( not Status ) then
+			client.set_clan_tag('')
+		end
+		CPLua.Clantag.last = ''
 		ui.set_visible(CPLua.Clantag.template, Status)
 	end)
 
 	CPLua.loops[#CPLua.loops + 1] = function()
 		if ( not ui.get(CPLua.Clantag.enable) ) then return end
+		if ( not entity.get_local_player() ) then return end
 
 		-- DATA CALCULATIONS
 		for index, value in ipairs(CPLua.Clantag.data) do
@@ -532,6 +537,8 @@ function Initiate()
 			end)
 		end
 	end)
+
+	--Confirmation number 3433330885724733509 for 412699682 (9119/1) (0 tokens)
 	
 
 
