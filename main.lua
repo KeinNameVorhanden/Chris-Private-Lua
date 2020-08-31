@@ -68,12 +68,13 @@ local CPPanorama = panorama.loadstring([[
 		},
 		cp_AutoCSGOStats: {
 			toggle: (status)=>{
-				if ( status ) {
+				if ( status && !cp_AutoCSGOStats.handle ) {
 					cp_AutoCSGOStats.handle = $.RegisterForUnhandledEvent( 'QueueConnectToServer', cp_AutoCSGOStats.QueueConnectToServer);
 					$.Msg('[$CP] registered for AutoCSGOStats');
 				} else {
 					if ( cp_AutoCSGOStats.handle ) {
 						$.UnregisterForUnhandledEvent( 'QueueConnectToServer', cp_AutoCSGOStats.handle);
+						cp_AutoCSGOStats.handle = false;
 						$.Msg('[$CP] Unregistered for AutoCSGOStats');
 					}
 				}
@@ -125,7 +126,7 @@ function Initiate()
 	-- START DerankScore
 	CPLua.DerankScore = {}
 	CPLua.DerankScore.enable = ui.new_checkbox('Lua', 'B', 'Auto Derank')
-	CPLua.DerankScore.method = ui.new_multiselect('Lua', 'B', 'Method', {'Round Start', 'During Timeout'})
+	CPLua.DerankScore.method = ui.new_multiselect('Lua', 'B', 'Method', {'Round Prestart', 'Round Start', 'During Timeout', 'Round End'})
 
 	ui.set_visible(CPLua.DerankScore.method, false)
 
@@ -152,11 +153,29 @@ function Initiate()
 		end
 	end
 
+	client.set_event_callback("round_start", function()
+		if ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('Round Prestart') then
+			client.delay_call(0, client.exec, "disconnect")
+			client.delay_call(0.5, function()
+				CPLua.DerankScore.Reconnect()
+			end)
+		end
+	end)
+
+	client.set_event_callback("round_end", function()
+		if ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('Round End') then
+			client.delay_call(0, client.exec, "disconnect")
+			client.delay_call(0.5, function()
+				CPLua.DerankScore.Reconnect()
+			end)
+		end
+	end)
+ 
 	client.set_event_callback("round_freeze_end", function()
 		if ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('Round Start') then
 			printDebug('Trying the disconnect')
 			client.delay_call(0, client.exec, "disconnect")
-			client.delay_call(1, function()
+			client.delay_call(0.5, function()
 				CPLua.DerankScore.Reconnect()
 			end)
 		end
@@ -176,7 +195,7 @@ function Initiate()
 			if ( TimeoutRemaining > 0) then
 				CPLua.DerankScore.Deranking = true
 				client.delay_call(0, client.exec, "disconnect")
-				client.delay_call(1, function()
+				client.delay_call(0.5, function()
 					CPLua.DerankScore.Reconnect()
 				end)
 			end
