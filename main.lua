@@ -27,6 +27,23 @@ local Options = {
 local CPPanorama = panorama.loadstring([[
 	LocalSteamID = MyPersonaAPI.GetXuid();
 
+	if ( typeof cp_print == 'undefined' ) {
+		cp_debugMode = false;
+		cp_print = (args)=>{
+			if ( cp_debugMode ) {
+				$.Msg('[csmit195\'s Lua] ', args);
+			}
+		}
+	}
+
+	if ( typeof cp_SayPartyChat == 'undefined' ) {
+		cp_SayPartyChat = (broadcast, msg)=>{
+			let Message = msg.replace(' ', ' ');
+			let SteamID = broadcast && LocalSteamID || '';
+			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${SteamID} chat ${Message}`);
+		}
+	}
+
 	if ( typeof cp_DelayAutoAccept == 'undefined' ) {
 		cp_DelayAutoAccept = {};
 		cp_DelayAutoAccept.status = false;
@@ -38,11 +55,26 @@ local CPPanorama = panorama.loadstring([[
 			});
 		};
 	}
+
+	if ( typeof cp_AutoAcceptDetection == 'undefined' ) {
+		cp_AutoAcceptDetection = {};
+		cp_AutoAcceptDetection.status = false;
+		cp_AutoAcceptDetection.last = 0;
+		
+		cp_AutoAcceptDetection.EventFunc = (shouldShow, playersReadyCount, numTotalClientsInReservation)=>{
+			let PossibleAutoAccepts = playersReadyCount - cp_AutoAcceptDetection.last;
+			cp_AutoAcceptDetection.last = playersReadyCount;
+			if ( PossibleAutoAccepts > 2 ) {
+				cp_SayPartyChat(`[$CP Detection Module] Possible ${PossibleAutoAccepts} Auto Accepts`);
+			}
+			cp_print(shouldShow, ' - ', playersReadyCount, ' - ', numTotalClientsInReservation);
+		};
+	}
 	
 	if ( typeof cp_AutoCSGOStats == 'undefined' ) {
 		cp_AutoCSGOStats = {};
 		cp_AutoCSGOStats.QueueConnectToServer = ()=>{
-			$.Msg('When?!');
+			cp_print('Opening CSGOStats.gg in user browser');
 			
 			SteamOverlayAPI.OpenExternalBrowserURL(`https://csgostats.gg/player/${LocalSteamID}#/live`);
 		};
@@ -53,29 +85,43 @@ local CPPanorama = panorama.loadstring([[
 			toggle: (status)=>{
 				if ( status ) {
 					cp_DelayAutoAccept.handle = $.RegisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_DelayAutoAccept.DelayAcceptFunc);
-					$.Msg('[$CP] registered for DelayAutoAccept');
+					cp_print('Registered for DelayAutoAccept');
 				} else {
 					if ( cp_DelayAutoAccept.handle ) {
 						$.UnregisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_DelayAutoAccept.handle);
-						$.Msg('[$CP] Unregistered for DelayAutoAccept');
+						cp_print('Unregistered for DelayAutoAccept');
 					}
 				}
 			},
 			updateDelay: (delay)=>{
 				cp_DelayAutoAccept.delaySeconds = delay;
-				$.Msg('[$CP] updated delay to: ' + delay);
+				cp_print('Updated delay to: ' + delay);
+			}
+		},
+		cp_AutoAcceptDetection: {
+			toggle: (status)=>{
+				if ( status && !cp_AutoAcceptDetection.handle ) {
+					cp_AutoAcceptDetection.handle = $.RegisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_AutoAcceptDetection.EventFunc);
+					cp_print('Registered for cp_AutoAcceptDetection');
+				} else {
+					if ( cp_AutoAcceptDetection.handle ) {
+						$.UnregisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_AutoAcceptDetection.handle);
+						cp_AutoAcceptDetection.handle = false;
+						cp_print('Unregistered for cp_AutoAcceptDetection');
+					}
+				}
 			}
 		},
 		cp_AutoCSGOStats: {
 			toggle: (status)=>{
 				if ( status && !cp_AutoCSGOStats.handle ) {
 					cp_AutoCSGOStats.handle = $.RegisterForUnhandledEvent( 'QueueConnectToServer', cp_AutoCSGOStats.QueueConnectToServer);
-					$.Msg('[$CP] registered for AutoCSGOStats');
+					cp_print('Registered for AutoCSGOStats');
 				} else {
 					if ( cp_AutoCSGOStats.handle ) {
 						$.UnregisterForUnhandledEvent( 'QueueConnectToServer', cp_AutoCSGOStats.handle);
 						cp_AutoCSGOStats.handle = false;
-						$.Msg('[$CP] Unregistered for AutoCSGOStats');
+						cp_print('Unregistered for AutoCSGOStats');
 					}
 				}
 			}
@@ -83,9 +129,15 @@ local CPPanorama = panorama.loadstring([[
 		cp_PlaySound: (sound, type)=>{
 			$.DispatchEvent( 'PlaySoundEffect', sound, type);
 		},
+		setDebugMode: (state)=>{
+			cp_debugMode = state;
+		},
 		steamID: LocalSteamID
 	}
 ]])();
+
+-- Reset debug mode incase restart of script
+CPPanorama.setDebugMode(false)
 
 -- adding into an init function just so I can better organise dependencies from other lib's at the bottom, until i work on a custom require lib from github.
 function Initiate()
@@ -122,6 +174,18 @@ function Initiate()
 		end
 	end)
 	-- END AutoAccept
+
+	-- START AutoAcceptDetect cp_AutoAcceptDetection
+	CPLua.AutoAcceptDetect = {}
+	CPLua.AutoAcceptDetect.enable = ui.new_checkbox('Lua', 'B', 'Auto Accept Detect')
+
+	CPPanorama.cp_AutoAcceptDetection.toggle(false);
+
+	ui.set_callback(CPLua.AutoAcceptDetect.enable, function(self)
+		local Status = ui.get(self)
+		CPPanorama.cp_AutoAcceptDetection.toggle(Status)
+	end)
+	-- END AutoAcceptDetect
 
 	-- START DerankScore
 	CPLua.DerankScore = {}
@@ -576,6 +640,7 @@ function Initiate()
 	ui.set_callback(CPLua.DebugOptions.enable, function(self)
 		local Status = ui.get(self)
 		Options.debugMode = Status
+		CPPanorama.setDebugMode(Status)
 	end)
 	-- END DebugOptions
 
