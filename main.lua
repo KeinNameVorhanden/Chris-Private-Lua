@@ -834,7 +834,7 @@ end
 
 function printDebug(...)
 	if ( not Options.debugMode ) then return end
-	printDebug(...)
+	print('[$CP]', ...)
 end
 
 local frametimes = {}
