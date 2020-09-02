@@ -43,7 +43,21 @@ local CPPanorama = panorama.loadstring([[
 			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${SteamID} chat ${Message}`);
 		}
 	}
+	cp_SayPartyChat(true, 'test')
 
+	if ( typeof cp_ReplacePartyChat == 'undefined' ) {
+		cp_ReplacePartyChat = {};
+		cp_ReplacePartyChat.OldFunc = PartyListAPI.SessionCommand;
+	}
+	PartyListAPI.SessionCommand = (...args)=>{
+		if ( typeof args[0] == 'string' && typeof args[1] == 'string' && args[0] == 'Game::Chat' ) {
+			$.Msg.apply(null, args);
+		} else {
+			$.Msg.apply(null, args);
+			cp_ReplacePartyChat.OldFunc.apply(null, args);
+		}
+	};
+	
 	if ( typeof cp_DelayAutoAccept == 'undefined' ) {
 		cp_DelayAutoAccept = {};
 		cp_DelayAutoAccept.status = false;
@@ -65,9 +79,8 @@ local CPPanorama = panorama.loadstring([[
 			let PossibleAutoAccepts = playersReadyCount - cp_AutoAcceptDetection.last;
 			cp_AutoAcceptDetection.last = playersReadyCount;
 			if ( PossibleAutoAccepts > 2 ) {
-				cp_SayPartyChat(`[$CP Detection Module] Possible ${PossibleAutoAccepts} Auto Accepts`);
+				cp_print(`[$CP Detection Module] Possible ${PossibleAutoAccepts} Auto Accepts`);
 			}
-			cp_print(shouldShow, ' - ', playersReadyCount, ' - ', numTotalClientsInReservation);
 		};
 	}
 	
