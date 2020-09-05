@@ -689,7 +689,9 @@ function Initiate()
 
 		CPLua.ChatMethods = {
 			['Local Chat'] = function(msg)
-				cp_SendChat(msg)
+				if ( sendChatSuccess ) then
+					cp_SendChat(msg)
+				end
 			end,
 			['Party Chat'] = function(msg)
 				PartyListAPI.SessionCommand('Game::Chat', string.format('run all xuid %s chat %s', CPPanorama.steamID, msg:gsub(' ', ' ')))
@@ -1033,21 +1035,23 @@ function esc(x)
 end
 
 -- Yoink
-local signature = '\x55\x8B\xEC\x83\xEC\x08\x8B\x15\xCC\xCC\xCC\xCC\x0F\x57'
-local signature_gHud = '\xB9\xCC\xCC\xCC\xCC\x88\x46\x09'
-local signature_FindElement = '\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x33\xF6\x39\x77\x28'
-local match = client.find_signature('client.dll', signature) or error('client_find_signature fucked up')
-local line_goes_through_smoke = ffi.cast('lgts', match) or error('ffi.cast fucked up')
-local match = client.find_signature('client.dll', signature_gHud) or error('signature not found')
-local hud = ffi.cast('void**', ffi.cast('char*', match) + 1)[0] or error('hud is nil')
-local helement_match = client.find_signature('client.dll', signature_FindElement) or error('FindHudElement not found')
-local hudchat = ffi.cast('FindHudElement_t', helement_match)(hud, 'CHudChat') or error('CHudChat not found')
-local chudchat_vtbl = hudchat[0] or error('CHudChat instance vtable is nil')
-local print_to_chat = ffi.cast('ChatPrintf_t', chudchat_vtbl[27])
+sendChatSuccess, cp_SendChat = pcall(function()
+	local signature = '\x55\x8B\xEC\x83\xEC\x08\x8B\x15\xCC\xCC\xCC\xCC\x0F\x57'
+	local signature_gHud = '\xB9\xCC\xCC\xCC\xCC\x88\x46\x09'
+	local signature_FindElement = '\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x33\xF6\x39\x77\x28'
+	local match = client.find_signature('client.dll', signature) or error('client_find_signature fucked up')
+	local line_goes_through_smoke = ffi.cast('lgts', match) or error('ffi.cast fucked up')
+	local match = client.find_signature('client.dll', signature_gHud) or error('signature not found')
+	local hud = ffi.cast('void**', ffi.cast('char*', match) + 1)[0] or error('hud is nil')
+	local helement_match = client.find_signature('client.dll', signature_FindElement) or error('FindHudElement not found')
+	local hudchat = ffi.cast('FindHudElement_t', helement_match)(hud, 'CHudChat') or error('CHudChat not found')
+	local chudchat_vtbl = hudchat[0] or error('CHudChat instance vtable is nil')
+	local print_to_chat = ffi.cast('ChatPrintf_t', chudchat_vtbl[27])
 
-function cp_SendChat(text)
-    print_to_chat(hudchat, 0, 0, text)
-end
+	return function (text)
+		print_to_chat(hudchat, 0, 0, text)
+	end
+end)
 
 local frametimes = {}
 local fps_prev = 0
