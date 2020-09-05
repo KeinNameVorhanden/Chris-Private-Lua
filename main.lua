@@ -16,8 +16,11 @@ local js = panorama.open()
 local CompetitiveMatchAPI = js.CompetitiveMatchAPI
 local GameStateAPI = js.GameStateAPI
 local FriendsListAPI = js.FriendsListAPI
+local PartyListAPI = js.PartyListAPI
 
+local ffi = require("ffi")
 local csgo_weapons_success, csgo_weapons = pcall(require, 'gamesense/csgo_weapons')
+local http_success, http = pcall(require, 'gamesense/http')
 
 -- Options
 local Options = {
@@ -43,9 +46,9 @@ local CPPanorama = panorama.loadstring([[
 			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${SteamID} chat ${Message}`);
 		}
 	}
-	cp_SayPartyChat(true, 'test')
 
-	if ( typeof cp_ReplacePartyChat == 'undefined' ) {
+
+	/*if ( typeof cp_ReplacePartyChat == 'undefined' ) {
 		cp_ReplacePartyChat = {};
 		cp_ReplacePartyChat.OldFunc = PartyListAPI.SessionCommand;
 	}
@@ -56,7 +59,7 @@ local CPPanorama = panorama.loadstring([[
 			$.Msg.apply(null, args);
 			cp_ReplacePartyChat.OldFunc.apply(null, args);
 		}
-	};
+	};*/
 	
 	if ( typeof cp_DelayAutoAccept == 'undefined' ) {
 		cp_DelayAutoAccept = {};
@@ -92,7 +95,7 @@ local CPPanorama = panorama.loadstring([[
 			SteamOverlayAPI.OpenExternalBrowserURL(`https://csgostats.gg/player/${LocalSteamID}#/live`);
 		};
 	}
-	
+
 	return {
 		cp_DelayAutoAccept: {
 			toggle: (status)=>{
@@ -634,10 +637,6 @@ function Initiate()
 		end
 	end)
 
-	--Confirmation number 3433330885724733509 for 412699682 (9119/1) (0 tokens)
-	
-
-
 	ui.set_callback(CPLua.ReportTool.enable, function(self)
 		local Status = ui.get(self)
 		ui.set_visible(CPLua.ReportTool.types, Status)
@@ -646,6 +645,185 @@ function Initiate()
 	ui.set_visible(CPLua.ReportTool.types, false)
 	ui.set_visible(CPLua.ReportTool.submit, false)
 	-- END ReportTool
+
+	-- START CrackTool
+	if ( http_success ) then
+		CPLua.CrackTool = {state=false}
+		CPLua.CrackTool.enable = ui.new_checkbox('Lua', 'B', 'Crack Checker')
+		CPLua.CrackTool.customformatEnable = ui.new_checkbox('Lua', 'B', 'Custom Format')
+		CPLua.CrackTool.customformat = ui.new_textbox('Lua', 'B', ' ')
+		CPLua.CrackTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
+		CPLua.CrackTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
+		
+		ui.set(CPLua.CrackTool.customformat, '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}')
+
+		CPLua.QueueChatMessages = {
+			['msgs'] = {},
+			['state'] = false
+		}
+		
+		CPLua.QueueChatMessages.sendNext = function()
+			local NextMessage = CPLua.QueueChatMessages.msgs[1]
+			if ( NextMessage ) then
+				print('attempt ', NextMessage[1])
+				local type = NextMessage[1]
+				local msg = NextMessage[2]
+				client.exec(type .. " ", msg)
+			end
+		end
+
+		client.set_event_callback('player_chat', function (e)
+			if ( #CPLua.QueueChatMessages.msgs > 0 ) then
+				local ent, name, text = e.entity, e.name, e.text
+				if ( ent == entity.get_local_player() and CPLua.QueueChatMessages.msgs[1][2]:find(esc(text)) ) then
+					printDebug('Confirmed message: ', text)
+
+					if ( #CPLua.QueueChatMessages.msgs > 0 ) then
+						table.remove(CPLua.QueueChatMessages.msgs, 1)
+						client.delay_call(1, CPLua.QueueChatMessages.sendNext)
+					end
+				end
+			end
+		end)
+
+
+		CPLua.ChatMethods = {
+			['Local Chat'] = function(msg)
+				cp_SendChat(msg)
+			end,
+			['Party Chat'] = function(msg)
+				PartyListAPI.SessionCommand('Game::Chat', string.format('run all xuid %s chat %s', CPPanorama.steamID, msg:gsub(' ', ' ')))
+			end,
+			['Game Chat'] = function(msg)
+				CPLua.QueueChatMessages.msgs[#CPLua.QueueChatMessages.msgs + 1] = {'say', msg}
+				print('Queued: ', msg)
+				if ( #CPLua.QueueChatMessages.msgs == 1 ) then
+					CPLua.QueueChatMessages.sendNext()
+				end
+			end,
+			['Team Chat'] = function(msg)
+				CPLua.QueueChatMessages.msgs[#CPLua.QueueChatMessages.msgs + 1] = {'say_team', msg}
+				print('Queued: ', msg)
+				if ( #CPLua.QueueChatMessages.msgs == 1 ) then
+					CPLua.QueueChatMessages.sendNext()
+				end
+			end,
+			['Console'] = function(...)
+				print(...)
+			end
+		}
+
+		ui.set(CPLua.CrackTool.customformat)
+
+		CPLua.CrackTool.StartStop = function(uiIndex)
+			local State = ui.name(uiIndex) == 'Start'
+			CPLua.CrackTool.state = State
+			ui.set_visible(CPLua.CrackTool.start, not State)
+			ui.set_visible(CPLua.CrackTool.stop, State)
+			if ( State ) then
+				local Target = ui.get(CPLua.CrackTool.target)
+				local Targets = {}
+				for Player=1, globals.maxplayers() do
+					if ( not CPLua.CrackTool.state ) then break end
+					local SteamXUID = GameStateAPI.GetPlayerXuidStringFromEntIndex(Player)
+					if ( SteamXUID:len() > 5 ) then
+						if ( Target == 'Everyone' ) then
+							Targets[#Targets + 1] = {SteamXUID, entity.get_player_name(Player)}
+						elseif ( Target == 'Teammates' and not entity.is_enemy(Player) ) then
+							Targets[#Targets + 1] = {SteamXUID, entity.get_player_name(Player)}
+						elseif ( Target == 'Enemies' and entity.is_enemy(Player) ) then
+							Targets[#Targets + 1] = {SteamXUID, entity.get_player_name(Player)}
+						end
+					end
+				end
+				local Completed = 0
+				if ( #Targets > 0 ) then
+					local OutputMethods = ui.get(CPLua.CrackTool.output)
+					for i, v in ipairs(Targets) do
+						local URL = 'https://csmit195.me/lolzteam/' .. v[1]
+
+						http.request('GET', URL, function(success, response)
+							if not success or response.status ~= 200 or not CPLua.CrackTool.state then return end
+							print(response.body)
+							local data = json.parse(response.body)
+							if ( data and data.success ~= nil and data.success == false ) then
+								printDebug('well fuck, we found nothing')
+							elseif ( data ) then
+								local ReplaceData = {}
+								ReplaceData.name = v[2]
+								ReplaceData.id = v[1]
+								ReplaceData.times = #data
+								ReplaceData.price = data[1].Price
+								ReplaceData.marketID = data[1].MarketID
+								ReplaceData.link =  'https://lolz.guru/market/'..ReplaceData.marketID
+
+								local Prices = {}
+								local Links = {}
+								local Currency = ''
+								for index, value in ipairs(data) do
+									Prices[#Prices + 1] = value.Price
+									Links[#Links + 1] = value.MarketID
+									Currency = value.Currency
+								end
+								ReplaceData.min = math.min(unpack(Prices))
+								ReplaceData.max = math.max(unpack(Prices))
+								
+								ReplaceData.links = table.concat(Links, ', ')
+
+								local Default = '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}'
+								if ( ui.get(CPLua.CrackTool.customformatEnable) ) then
+									Default = ui.get(CPLua.CrackTool.customformat)
+								end
+								local Msg = processTags(Default, ReplaceData);
+								for index, value in ipairs(OutputMethods) do
+									CPLua.ChatMethods[value](Msg)
+								end
+							end
+
+							Completed = Completed + 1
+							if ( Completed == #Targets ) then
+								CPLua.CrackTool.state = false
+
+								--CPLua.QueueChatMessages.sendNext()
+
+								ui.set_visible(CPLua.CrackTool.start, true)
+								ui.set_visible(CPLua.CrackTool.stop, false)
+							end
+						end)
+					end
+				elseif ( #Targets == 0 ) then
+					print(#Targets)
+					ui.set_visible(CPLua.CrackTool.start, true)
+					ui.set_visible(CPLua.CrackTool.stop, false)
+				end
+			end
+		end
+		CPLua.CrackTool.start = ui.new_button('Lua', 'B', 'Start', CPLua.CrackTool.StartStop)
+		CPLua.CrackTool.stop = ui.new_button('Lua', 'B', 'Stop', CPLua.CrackTool.StartStop)
+
+		ui.set_callback(CPLua.CrackTool.enable, function(self)
+			local Status = ui.get(self)
+			ui.set_visible(CPLua.CrackTool.customformatEnable, Status)
+			ui.set_visible(CPLua.CrackTool.customformat, ui.get(CPLua.CrackTool.customformatEnable) and Status)
+			ui.set_visible(CPLua.CrackTool.target, Status)
+			ui.set_visible(CPLua.CrackTool.output, Status)
+			ui.set_visible(CPLua.CrackTool.start, not CPLua.CrackTool.state and Status)
+			ui.set_visible(CPLua.CrackTool.stop, CPLua.CrackTool.state and Status)
+		end)
+
+		ui.set_callback(CPLua.CrackTool.customformatEnable, function(self)
+			local Status = ui.get(self)
+			ui.set_visible(CPLua.CrackTool.customformat, Status)
+		end)
+		
+		ui.set_visible(CPLua.CrackTool.customformatEnable, false)
+		ui.set_visible(CPLua.CrackTool.customformat, false)
+		ui.set_visible(CPLua.CrackTool.target, false)
+		ui.set_visible(CPLua.CrackTool.output, false)
+		ui.set_visible(CPLua.CrackTool.start, false)
+		ui.set_visible(CPLua.CrackTool.stop, false)
+	end
+	-- END CrackTool
 
 	-- START DebugOptions
 	CPLua.DebugOptions = {}
@@ -848,6 +1026,27 @@ end
 function printDebug(...)
 	if ( not Options.debugMode ) then return end
 	print('[$CP]', ...)
+end
+
+function esc(x)
+	return (x:gsub('%%', '%%%%'):gsub('^%^', '%%^'):gsub('%$$', '%%$'):gsub('%(', '%%('):gsub('%)', '%%)'):gsub('%.', '%%.'):gsub('%[', '%%['):gsub('%]', '%%]'):gsub('%*', '%%*'):gsub('%+', '%%+'):gsub('%-', '%%-'):gsub('%?', '%%?'))
+end
+
+-- Yoink
+local signature = '\x55\x8B\xEC\x83\xEC\x08\x8B\x15\xCC\xCC\xCC\xCC\x0F\x57'
+local signature_gHud = '\xB9\xCC\xCC\xCC\xCC\x88\x46\x09'
+local signature_FindElement = '\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x33\xF6\x39\x77\x28'
+local match = client.find_signature('client.dll', signature) or error('client_find_signature fucked up')
+local line_goes_through_smoke = ffi.cast('lgts', match) or error('ffi.cast fucked up')
+local match = client.find_signature('client.dll', signature_gHud) or error('signature not found')
+local hud = ffi.cast('void**', ffi.cast('char*', match) + 1)[0] or error('hud is nil')
+local helement_match = client.find_signature('client.dll', signature_FindElement) or error('FindHudElement not found')
+local hudchat = ffi.cast('FindHudElement_t', helement_match)(hud, 'CHudChat') or error('CHudChat not found')
+local chudchat_vtbl = hudchat[0] or error('CHudChat instance vtable is nil')
+local print_to_chat = ffi.cast('ChatPrintf_t', chudchat_vtbl[27])
+
+function cp_SendChat(text)
+    print_to_chat(hudchat, 0, 0, text)
 end
 
 local frametimes = {}
