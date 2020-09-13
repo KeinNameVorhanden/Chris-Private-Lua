@@ -10,7 +10,7 @@
     Script Name: Private $CP Script
     Script Author: csmit195
     Script Version: 1.0
-    Script Description: Don't even fucking ask.
+    Script Description: Don't even blanken ask!
 ]]
 local js = panorama.open()
 local CompetitiveMatchAPI = js.CompetitiveMatchAPI
