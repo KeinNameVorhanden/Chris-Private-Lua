@@ -162,7 +162,11 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		cmds: ['start', 'startq', 'startqueue', 'queue'],
 		exec: (cmd, args) => { 
 			$.Msg('you fucking what cunt?', args)
-			LobbyAPI.StartMatchmaking("","t","ct","")
+			let ForceTeam = ( args[0] && args[0].toLowerCase() == 't' ) && 't' || 'ct';
+			let NotForceTeam = ForceTeam == 't' && 'ct' || 't';
+			$.Msg(ForceTeam, NotForceTeam)
+			LobbyAPI.StartMatchmaking("",ForceTeam,NotForceTeam,"")
+			//LobbyAPI.StartMatchmaking("","t","ct","")
 		}
 	});
 	PartyChatCommands.push({
