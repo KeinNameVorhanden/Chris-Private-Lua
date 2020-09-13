@@ -162,7 +162,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		cmds: ['start', 'startq', 'startqueue', 'queue'],
 		exec: (cmd, args) => { 
 			$.Msg('you fucking what cunt?', args)
-			LobbyAPI.StartMatchmaking("","ct","t","")
+			LobbyAPI.StartMatchmaking("","t","ct","")
 		}
 	});
 	PartyChatCommands.push({
@@ -177,7 +177,9 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		cmds: ['restart', 'restartq', 'restartqueue'],
 		exec: (cmd, args) => { 
 			LobbyAPI.StopMatchmaking()
-			LobbyAPI.StartMatchmaking("","ct","t","")
+			$.Schedule( .5, ()=>{
+				LobbyAPI.StartMatchmaking("","ct","t","")
+			});
 		}
 	});
 	PartyChatCommands.push({
