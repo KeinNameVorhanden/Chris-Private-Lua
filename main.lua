@@ -165,7 +165,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 			let ForceTeam = ( args[0] && args[0].toLowerCase() == 't' ) && 't' || 'ct';
 			let NotForceTeam = ForceTeam == 't' && 'ct' || 't';
 			$.Msg(ForceTeam, NotForceTeam)
-			LobbyAPI.StartMatchmaking("",ForceTeam,NotForceTeam,"")
+			LobbyAPI.StartMatchmaking('',ForceTeam,'','')
 			//LobbyAPI.StartMatchmaking("","t","ct","")
 		}
 	});
