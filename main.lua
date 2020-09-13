@@ -152,6 +152,101 @@ local CPPanorama = panorama.loadstring([[
 	}
 ]])();
 
+CPPanoramaMainMenu = panorama.loadstring([[
+	// Lobby Chat Utils
+	let Prefix = '!';
+
+	let PartyChatCommands = [];
+	PartyChatCommands.push({
+		title: 'Start Queue (!startq)',
+		cmds: ['start', 'startq', 'startqueue', 'queue'],
+		exec: (cmd, args) => { 
+			$.Msg('you fucking what cunt?', args)
+			LobbyAPI.StartMatchmaking("","ct","t","")
+		}
+	});
+	PartyChatCommands.push({
+		title: 'Stop Queue (!stopq)',
+		cmds: ['stop', 'stopq', 'stopqueue'],
+		exec: (cmd, args) => { 
+			LobbyAPI.StopMatchmaking()
+		}
+	});
+	PartyChatCommands.push({
+		title: 'Restart Queue (!restartq)',
+		cmds: ['restart', 'restartq', 'restartqueue'],
+		exec: (cmd, args) => { 
+			LobbyAPI.StopMatchmaking()
+			LobbyAPI.StartMatchmaking("","ct","t","")
+		}
+	});
+	PartyChatCommands.push({
+		title: 'Maps (!maps dust2, safehouse)',
+		cmds: ['maps', 'map', 'setmaps', 'changemap', 'changemaps'],
+		exec: (cmd, args) => { 
+
+		}
+	});
+	PartyChatCommands.push({
+		title: 'Kick (!kick <partial:name>|<steamid>|<friendcode>)',
+		cmds: ['stop', 'stopq', 'stopqueue'],
+		exec: (cmd, args) => { 
+
+		}
+	});
+	PartyChatCommands.push({
+		title: 'Invite (!invite <steamid>|<friendcode>)',
+		cmds: ['inv', 'invite', 'add'],
+		exec: (cmd, args) => {
+			for ( i = 0; i < args.length; i++ ) {
+				let SteamID = args[i];
+				if ( SteamID.length == 17 ) {
+					FriendsListAPI.ActionInviteFriend(SteamID, '')
+				}
+			}
+		}
+	});
+
+	return {
+		PartyChatLoop: ()=>{
+			let party_chat = $.GetContextPanel().FindChildTraverse("PartyChat")
+			if(party_chat) {
+				let chat_lines = party_chat.FindChildTraverse("ChatLinesContainer")
+				if(chat_lines) {
+					chat_lines.Children().forEach(el => {
+						let child = el.GetChild(0)
+						if ( child && child.BHasClass('left-right-flow') && child.BHasClass('horizontal-align-left') ) {
+							if ( child.BHasClass('cp_processed') ) return false;
+
+							let InnerChild = child.GetChild(child.GetChildCount()-1);
+							if ( InnerChild && InnerChild.text ) {
+								var Message = InnerChild.text.toLowerCase()
+
+								for ( index=0; index < PartyChatCommands.length; index++ ) {
+									const ChatCommand = PartyChatCommands[index];
+									for ( i=0; i<ChatCommand.cmds.length; i++ ) {
+										const Alias = ChatCommand.cmds[i];
+										const Search = Message.search(`${Prefix}${Alias}`);
+										if ( Search != -1 ) {
+											const Msg = Message.substr(Search)
+											const args = Msg.slice(Prefix.length).trim().split(' ');
+											const command = args.shift().toLowerCase();
+											ChatCommand.exec(command, args)
+											break;
+										}
+									}
+								}
+							}
+							
+							child.AddClass('cp_processed');
+						}
+					})
+				}
+			}
+		}
+	}
+]], 'CSGOMainMenu')();
+
 -- Reset debug mode incase restart of script
 CPPanorama.setDebugMode(false)
 
@@ -826,6 +921,21 @@ function Initiate()
 		ui.set_visible(CPLua.CrackTool.stop, false)
 	end
 	-- END CrackTool
+
+	-- START PartyChatUtils
+	CPLua.PartyChatUtils = {}
+	CPLua.PartyChatUtils.enable = ui.new_checkbox('Lua', 'B', 'Party Chat Utilities')
+
+	ui.set(CPLua.PartyChatUtils.enable, true)
+
+	local LastTick = globals.realtime()
+	client.set_event_callback('post_render', function()
+		if ( globals.realtime() - LastTick > 0.25 and ui.get(CPLua.PartyChatUtils.enable) ) then
+			CPPanoramaMainMenu.PartyChatLoop()
+			LastTick = globals.realtime()
+		end
+	end)
+	-- END PartyChatUtils
 
 	-- START DebugOptions
 	CPLua.DebugOptions = {}
