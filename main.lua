@@ -856,8 +856,8 @@ function Initiate()
 								ReplaceData.name = v[2]
 								ReplaceData.id = v[1]
 								ReplaceData.times = #data
-								ReplaceData.price = data[1].Price
-								ReplaceData.marketID = data[1].MarketID
+								ReplaceData.price = data[#data].Price
+								ReplaceData.marketID = data[#data].MarketID
 								ReplaceData.link =  'https://lolz.guru/market/'..ReplaceData.marketID
 
 								local Prices = {}
