@@ -41,9 +41,10 @@ local CPPanorama = panorama.loadstring([[
 
 	if ( typeof cp_SayPartyChat == 'undefined' ) {
 		cp_SayPartyChat = (broadcast, msg)=>{
-			let Message = msg.replace(' ', ' ');
-			let SteamID = broadcast && LocalSteamID || '';
-			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${SteamID} chat ${Message}`);
+			let Message = msg.split(' ').join('\u{00A0}');
+			let MySteamID = MyPersonaAPI.GetXuid();
+			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
+			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
 		}
 	}
 
@@ -142,6 +143,9 @@ local CPPanorama = panorama.loadstring([[
 				}
 			}
 		},
+		cp_Localize: (...args)=>{
+			return $.Localize.apply(null, args);
+		},
 		cp_PlaySound: (sound, type)=>{
 			$.DispatchEvent( 'PlaySoundEffect', sound, type);
 		},
@@ -207,6 +211,38 @@ CPPanoramaMainMenu = panorama.loadstring([[
 				if ( SteamID.length == 17 ) {
 					FriendsListAPI.ActionInviteFriend(SteamID, '')
 				}
+			}
+		}
+	});
+	PartyChatCommands.push({
+		title: 'Crack Checker (!crackcheck)',
+		cmds: ['cc', 'crackcheck', 'check', 'crack', 'cracks'],
+		exec: (cmd, args) => {
+			for ( i = 0; i < PartyListAPI.GetCount(); i++ ) {
+				let SteamID = PartyListAPI.GetXuidByIndex(i);
+				let SteamName = PartyListAPI.GetFriendName(SteamID);
+				$.AsyncWebRequest(`https://csmit195.me/api/lolzteam/${SteamID}`,
+					{
+						type:"GET",
+						complete:function(e){
+							let Response = e.responseText.substring(0, e.responseText.length-1);
+							let Data = JSON.parse(Response);
+
+							if ( typeof Data != 'undefined' && typeof Data.success == 'undefined' ) {
+								let Times = Data.length;
+								let Price = Data[0].Price;
+								let MarketID = Data[0].MarketID;
+								let Link = `https://lolz.guru/market/${MarketID}`;
+
+								let LobbyMSG = `[CrackCheck] ${SteamName} - ${Price}usd - ID: ${MarketID}`;
+
+								let Message = LobbyMSG.split(' ').join('\u{00A0}');
+								let MySteamID = MyPersonaAPI.GetXuid();
+								PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
+							}
+						}
+					}
+				);
 			}
 		}
 	});
@@ -549,35 +585,18 @@ function Initiate()
 
 	CPLua.Clantag.processedData = {}
 
-	CPLua.Clantag.ranks = {
-		'',
-		'S1',
-		'S2',
-		'S3',
-		'S4',
-		'SE',
-		'SEM',
-		'GN1',
-		'GN2',
-		'GN3',
-		'GNM',
-		'MG1',
-		'MG2',
-		'MGE',
-		'DMG',
-		'LE',
-		'LEM',
-		'SMFC',
-		'GE'
-	}
-
 	-- format {tag, refreshrate, updatefunc}
 	CPLua.Clantag.data = {
 		{'rank', 300, function()
-			local Rank = entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveRanking', entity.get_local_player())
-			printDebug('RANK', Rank, CPLua.Clantag.ranks[Rank+1])
-			if ( Rank ) then
-				return CPLua.Clantag.ranks[Rank+1]
+			local currentRank = entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveRanking', entity.get_local_player())
+			if ( currentRank == 0 ) then return 'N/A' end
+
+			if ( currentRank ) then
+				local CurrentMode = GameStateAPI.GetGameModeInternalName(true)
+				local RankLong = CPPanorama.cp_Localize(CurrentMode == 'survival' and '#skillgroup_'..currentRank..'dangerzone' or 'RankName_' .. currentRank)
+				local RankName = getRankShortName(RankLong)
+
+				return RankName
 			end
 		end, 0},
 		{'wins', 300, function()
@@ -800,7 +819,6 @@ function Initiate()
 			end
 		end)
 
-
 		CPLua.ChatMethods = {
 			['Local Chat'] = function(msg)
 				if ( sendChatSuccess ) then
@@ -856,11 +874,10 @@ function Initiate()
 				if ( #Targets > 0 ) then
 					local OutputMethods = ui.get(CPLua.CrackTool.output)
 					for i, v in ipairs(Targets) do
-						local URL = 'https://csmit195.me/lolzteam/' .. v[1]
+						local URL = 'https://csmit195.me/api/lolzteam/' .. v[1]
 
 						http.request('GET', URL, function(success, response)
 							if not success or response.status ~= 200 or not CPLua.CrackTool.state then return end
-							print(response.body)
 							local data = json.parse(response.body)
 							if ( data and data.success ~= nil and data.success == false ) then
 								printDebug('well fuck, we found nothing')
@@ -869,8 +886,8 @@ function Initiate()
 								ReplaceData.name = v[2]
 								ReplaceData.id = v[1]
 								ReplaceData.times = #data
-								ReplaceData.price = data[#data].Price
-								ReplaceData.marketID = data[#data].MarketID
+								ReplaceData.price = data[1].Price
+								ReplaceData.marketID = data[1].MarketID
 								ReplaceData.link =  'https://lolz.guru/market/'..ReplaceData.marketID
 
 								local Prices = {}
@@ -940,6 +957,116 @@ function Initiate()
 		ui.set_visible(CPLua.CrackTool.stop, false)
 	end
 	-- END CrackTool
+
+	-- START FaceITTool
+	if ( http_success ) then
+		CPLua.FaceITTool = {state=false}
+		CPLua.FaceITTool.enable = ui.new_checkbox('Lua', 'B', 'FaceIT Checker')
+		CPLua.FaceITTool.customformatEnable = ui.new_checkbox('Lua', 'B', 'Custom Format')
+		CPLua.FaceITTool.customformat = ui.new_textbox('Lua', 'B', ' ')
+		CPLua.FaceITTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
+		CPLua.FaceITTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
+		
+		ui.set(CPLua.FaceITTool.customformat, '[FaceIT Checker] User {name} has a KD/R of {kdr}!')
+
+		CPLua.FaceITTool.StartStop = function(uiIndex)
+			local State = ui.name(uiIndex) == 'Start'
+			CPLua.FaceITTool.state = State
+			ui.set_visible(CPLua.FaceITTool.start, not State)
+			ui.set_visible(CPLua.FaceITTool.stop, State)
+			if ( State ) then
+				local Target = ui.get(CPLua.FaceITTool.target)
+				local Targets = {}
+				for Player=1, globals.maxplayers() do
+					if ( not CPLua.FaceITTool.state ) then break end
+					local SteamXUID = GameStateAPI.GetPlayerXuidStringFromEntIndex(Player)
+					if ( SteamXUID:len() > 5 ) then
+						if ( Target == 'Everyone' ) then
+							Targets[#Targets + 1] = {SteamXUID, entity.get_player_name(Player)}
+						elseif ( Target == 'Teammates' and not entity.is_enemy(Player) ) then
+							Targets[#Targets + 1] = {SteamXUID, entity.get_player_name(Player)}
+						elseif ( Target == 'Enemies' and entity.is_enemy(Player) ) then
+							Targets[#Targets + 1] = {SteamXUID, entity.get_player_name(Player)}
+						end
+					end
+				end
+				local Completed = 0
+				if ( #Targets > 0 ) then
+					local OutputMethods = ui.get(CPLua.FaceITTool.output)
+					for i, v in ipairs(Targets) do
+						local URL = 'https://csmit195.me/api/faceit/' .. v[1]
+
+						http.request('GET', URL, function(success, response)
+							if not success or response.status ~= 200 or not CPLua.FaceITTool.state then return end
+							local data = json.parse(response.body)
+							if ( data and data.success ~= nil and data.success == false ) then
+								printDebug('well fuck, we found nothing')
+							elseif ( data ) then
+								local ReplaceData = {}
+								ReplaceData.name = v[2]
+								ReplaceData.steamid = v[1]
+								ReplaceData.id = data.id
+								ReplaceData.user = data.nickname
+								ReplaceData.country = data.country
+								ReplaceData.kdratio = data.kdratio
+								ReplaceData.win = data.winratio .. '%'
+								ReplaceData.hschance = data.hschance
+								ReplaceData.matches = data.matches
+
+								local Default = '[FaceIT Checker] {name} has a faceit acc ({user}) with {win} chance over {matches} games!'
+								if ( ui.get(CPLua.FaceITTool.customformatEnable) ) then
+									Default = ui.get(CPLua.FaceITTool.customformat)
+								end
+								local Msg = processTags(Default, ReplaceData);
+								for index, value in ipairs(OutputMethods) do
+									CPLua.ChatMethods[value](Msg)
+								end
+							end
+
+							Completed = Completed + 1
+							if ( Completed == #Targets ) then
+								CPLua.FaceITTool.state = false
+
+								--CPLua.QueueChatMessages.sendNext()
+
+								ui.set_visible(CPLua.FaceITTool.start, true)
+								ui.set_visible(CPLua.FaceITTool.stop, false)
+							end
+						end)
+					end
+				elseif ( #Targets == 0 ) then
+					print(#Targets)
+					ui.set_visible(CPLua.FaceITTool.start, true)
+					ui.set_visible(CPLua.FaceITTool.stop, false)
+				end
+			end
+		end
+		CPLua.FaceITTool.start = ui.new_button('Lua', 'B', 'Start', CPLua.FaceITTool.StartStop)
+		CPLua.FaceITTool.stop = ui.new_button('Lua', 'B', 'Stop', CPLua.FaceITTool.StartStop)
+
+		ui.set_callback(CPLua.FaceITTool.enable, function(self)
+			local Status = ui.get(self)
+			ui.set_visible(CPLua.FaceITTool.customformatEnable, Status)
+			ui.set_visible(CPLua.FaceITTool.customformat, ui.get(CPLua.FaceITTool.customformatEnable) and Status)
+			ui.set_visible(CPLua.FaceITTool.target, Status)
+			ui.set_visible(CPLua.FaceITTool.output, Status)
+			ui.set_visible(CPLua.FaceITTool.start, not CPLua.FaceITTool.state and Status)
+			ui.set_visible(CPLua.FaceITTool.stop, CPLua.FaceITTool.state and Status)
+		end)
+
+		ui.set_callback(CPLua.FaceITTool.customformatEnable, function(self)
+			local Status = ui.get(self)
+			ui.set_visible(CPLua.FaceITTool.customformat, Status)
+		end)
+		
+		ui.set_visible(CPLua.FaceITTool.customformatEnable, false)
+		ui.set_visible(CPLua.FaceITTool.customformat, false)
+		ui.set_visible(CPLua.FaceITTool.target, false)
+		ui.set_visible(CPLua.FaceITTool.output, false)
+		ui.set_visible(CPLua.FaceITTool.start, false)
+		ui.set_visible(CPLua.FaceITTool.stop, false)
+	end
+	-- END FaceITTool
 
 	-- START PartyChatUtils
 	CPLua.PartyChatUtils = {}
@@ -1161,6 +1288,19 @@ end
 
 function esc(x)
 	return (x:gsub('%%', '%%%%'):gsub('^%^', '%%^'):gsub('%$$', '%%$'):gsub('%(', '%%('):gsub('%)', '%%)'):gsub('%.', '%%.'):gsub('%[', '%%['):gsub('%]', '%%]'):gsub('%*', '%%*'):gsub('%+', '%%+'):gsub('%-', '%%-'):gsub('%?', '%%?'))
+end
+
+function getRankShortName(LongRankName)
+	if not LongRankName then return false end
+	local RomanNumerals = {'III', 'II', 'I'}
+	local Rank = LongRankName:gsub('The ', ' '):gsub('%l', '')
+	for RomanIndex = 1, #RomanNumerals do
+		if ( Rank:find(RomanNumerals[RomanIndex]) ) then
+		Rank = Rank:gsub(RomanNumerals[RomanIndex], #RomanNumerals + 1 - RomanIndex)
+		end
+		Rank = Rank:gsub(' ', '')
+	end
+	return Rank
 end
 
 -- Yoink
