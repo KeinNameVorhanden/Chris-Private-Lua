@@ -1001,7 +1001,7 @@ function Initiate()
 							local data = json.parse(response.body)
 							if ( data and data.success ~= nil and data.success == false ) then
 								printDebug('well fuck, we found nothing')
-							elseif ( data ) then
+							elseif ( data and data.id and data.matches ) then
 								local ReplaceData = {}
 								ReplaceData.name = v[2]
 								ReplaceData.steamid = v[1]
