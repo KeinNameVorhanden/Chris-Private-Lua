@@ -161,10 +161,8 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		title: 'Start Queue (!startq)',
 		cmds: ['start', 'startq', 'startqueue', 'queue'],
 		exec: (cmd, args) => { 
-			$.Msg('you fucking what cunt?', args)
 			let ForceTeam = ( args[0] && args[0].toLowerCase() == 't' ) && 't' || 'ct';
 			let NotForceTeam = ForceTeam == 't' && 'ct' || 't';
-			$.Msg(ForceTeam, NotForceTeam)
 			LobbyAPI.StartMatchmaking('',ForceTeam,'','')
 			//LobbyAPI.StartMatchmaking("","t","ct","")
 		}
@@ -212,6 +210,21 @@ CPPanoramaMainMenu = panorama.loadstring([[
 			}
 		}
 	});
+
+	// Ignore Initial Chat
+	let party_chat = $.GetContextPanel().FindChildTraverse("PartyChat")
+	if(party_chat) {
+		let chat_lines = party_chat.FindChildTraverse("ChatLinesContainer")
+		if(chat_lines) {
+			chat_lines.Children().forEach(el => {
+				let child = el.GetChild(0)
+				if ( child && child.BHasClass('left-right-flow') && child.BHasClass('horizontal-align-left') ) {
+					if ( child.BHasClass('cp_processed') ) return false;
+					child.AddClass('cp_processed');
+				}
+			})
+		}
+	}
 
 	return {
 		PartyChatLoop: ()=>{
@@ -292,7 +305,7 @@ function Initiate()
 	end)
 	-- END AutoAccept
 
-	-- START AutoAcceptDetect cp_AutoAcceptDetection
+	--[[ START AutoAcceptDetect cp_AutoAcceptDetection
 	CPLua.AutoAcceptDetect = {}
 	CPLua.AutoAcceptDetect.enable = ui.new_checkbox('Lua', 'B', 'Auto Accept Detect')
 
@@ -302,7 +315,7 @@ function Initiate()
 		local Status = ui.get(self)
 		CPPanorama.cp_AutoAcceptDetection.toggle(Status)
 	end)
-	-- END AutoAcceptDetect
+	-- END AutoAcceptDetect]]
 
 	-- START DerankScore
 	CPLua.DerankScore = {}
