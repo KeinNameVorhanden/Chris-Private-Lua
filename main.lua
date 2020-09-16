@@ -163,7 +163,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 	let PartyChatCommands = [];
 	PartyChatCommands.push({
 		title: 'Start Queue (!startq)',
-		cmds: ['start', 'startq', 'startqueue', 'queue'],
+		cmds: ['start', 'startq', 'startqueue', 'queue', 'q'],
 		exec: (cmd, args) => { 
 			let ForceTeam = ( args[0] && args[0].toLowerCase() == 't' ) && 't' || 'ct';
 			let NotForceTeam = ForceTeam == 't' && 'ct' || 't';
@@ -173,14 +173,14 @@ CPPanoramaMainMenu = panorama.loadstring([[
 	});
 	PartyChatCommands.push({
 		title: 'Stop Queue (!stopq)',
-		cmds: ['stop', 'stopq', 'stopqueue'],
+		cmds: ['stop', 'stopq', 'stopqueue', 'sq', 's'],
 		exec: (cmd, args) => { 
 			LobbyAPI.StopMatchmaking()
 		}
 	});
 	PartyChatCommands.push({
 		title: 'Restart Queue (!restartq)',
-		cmds: ['restart', 'restartq', 'restartqueue'],
+		cmds: ['restart', 'restartq', 'restartqueue', 'rs'],
 		exec: (cmd, args) => { 
 			LobbyAPI.StopMatchmaking()
 			$.Schedule( .5, ()=>{
@@ -1173,7 +1173,7 @@ function Initiate()
 	-- UI References
 	local PlayerList = ui.reference('Players', 'Players', 'Player list')
 	local ResetAll = ui.reference('Players', 'Players', 'Reset all')
-	local ApplyToAll = ui.reference('Players', 'Adjustments', 'Apply to all')
+	local ApplyToAll = ui.reference('Players', 'Adjustments', '`o all')
 
 	-- Script UI
 	local MessageRepeater = {}
@@ -1237,7 +1237,7 @@ function Initiate()
 
 	ui.set_callback(ApplyToAll, function(self)
 		for Player=1, globals.maxplayers() do
-			if ( entity.is_enemy(Player) ) then
+			if ( entity.is_enemy(Player) and ui.get(MessageRepeater.repeatMessages) ) then
 				MessageRepeater.cache[Player] = {}
 				MessageRepeater.cache[Player].Status = true
 				MessageRepeater.cache[Player].Method = ui.get(MessageRepeater.repeatMethod)
