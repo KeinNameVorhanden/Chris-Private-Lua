@@ -761,16 +761,17 @@ function Initiate()
 			local delay = value[3]
 			local callfunc = value[4]
 			
-			if ( globals.curtime() > value[4] ) then
+			if ( globals.curtime() > value[5] ) then
 				local Output = callfunc()
 				if ( Output == nil ) then
 					CPLua.Clantag.processedData[tag] = ''
 				elseif ( Output ) then
 					CPLua.Clantag.processedData[tag] = Output
 				end
-				value[4] = globals.curtime() + delay
+				value[5] = globals.curtime() + delay
 			end
 		end
+		
 		local newClantag = processTags(ui.get(CPLua.Clantag.template), CPLua.Clantag.processedData)
 		if ( CPLua.Clantag.last ~= newClantag ) then
 			client.set_clan_tag(newClantag)
