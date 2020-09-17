@@ -96,6 +96,30 @@ local CPPanorama = panorama.loadstring([[
 			SteamOverlayAPI.OpenExternalBrowserURL(`https://csgostats.gg/player/${LocalSteamID}#/live`);
 		};
 	}
+	
+	if ( typeof cp_LongPollSubscribe == 'undefined' ) {
+		let subscribe = function(url, cb) {
+			$.AsyncWebRequest(url,
+				{
+					method:'GET',
+					success:function(data) {
+						cb(data)
+					},
+					complete:function(data){
+						$.Schedule(1, function() {
+							subscribe(url, cb);
+						});
+					},
+					timeout: 30000
+				}
+			);
+		};
+
+		/*subscribe("http://localhost:1341/GlobalPoll", function (data) {
+			$.Msg("Data:", data, typeof data);
+		});*/
+		cp_LongPollSubscribe = {};
+	}
 
 	return {
 		cp_DelayAutoAccept: {
@@ -312,7 +336,7 @@ function Initiate()
 		loops = {}
 	} 
 	CPLua.Header = ui.new_label('Lua', 'B', '=--------------  [   $CP Start   ]  --------------=')
-
+	ui.set(CPLua.Header, 'yeah okay')
 	-- START AutoAccept
 	CPLua.AutoAccept = {}
 	CPLua.AutoAccept.originalAutoAccept = ui.reference('MISC', 'Miscellaneous', 'Auto-accept matchmaking')
@@ -1173,7 +1197,7 @@ function Initiate()
 	-- UI References
 	local PlayerList = ui.reference('Players', 'Players', 'Player list')
 	local ResetAll = ui.reference('Players', 'Players', 'Reset all')
-	local ApplyToAll = ui.reference('Players', 'Adjustments', '`o all')
+	local ApplyToAll = ui.reference('Players', 'Adjustments', 'Apply to all')
 
 	-- Script UI
 	local MessageRepeater = {}
