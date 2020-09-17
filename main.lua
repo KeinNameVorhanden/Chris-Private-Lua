@@ -722,12 +722,12 @@ function Initiate()
 		local TemplateText = ui.get(CPLua.Clantag.template)
 		if ( TemplateText ~= LastTemplateText ) then
 			LastTemplateText = TemplateText
-			local Match = TemplateText:match('{(%a*)$')
+			local Match = TemplateText:match('{(%a*%d*)$')
 			if ( Match ) then
 				local FoundMatch = false
 				if ( Match:len() > 0 ) then
 					for i, v in ipairs(CPLua.Clantag.data) do
-						if ( v[1]:find(Match) ) then
+						if ( v[1]:sub(1, Match:len()) == Match ) then
 							FoundMatch = v
 							break;
 						end
