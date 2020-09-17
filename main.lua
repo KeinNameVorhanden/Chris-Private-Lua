@@ -336,7 +336,6 @@ function Initiate()
 		loops = {}
 	} 
 	CPLua.Header = ui.new_label('Lua', 'B', '=--------------  [   $CP Start   ]  --------------=')
-	ui.set(CPLua.Header, 'yeah okay')
 	-- START AutoAccept
 	CPLua.AutoAccept = {}
 	CPLua.AutoAccept.originalAutoAccept = ui.reference('MISC', 'Miscellaneous', 'Auto-accept matchmaking')
@@ -606,12 +605,13 @@ function Initiate()
 	CPLua.Clantag.last = ''
 	CPLua.Clantag.enable = ui.new_checkbox('Lua', 'B', 'Clantag Builder [BETA]')
 	CPLua.Clantag.template = ui.new_textbox('Lua', 'B', ' ')
+	CPLua.Clantag.helper = ui.new_label('Lua', 'B', 'Helper: type { to get suggestions')
 
 	CPLua.Clantag.processedData = {}
 
 	-- format {tag, refreshrate, updatefunc}
 	CPLua.Clantag.data = {
-		{'rank', 300, function()
+		{'rank', 'competitive ranking', 300, function()
 			local currentRank = entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveRanking', entity.get_local_player())
 			if ( currentRank == 0 ) then return 'N/A' end
 
@@ -623,28 +623,28 @@ function Initiate()
 				return RankName
 			end
 		end, 0},
-		{'wins', 300, function()
+		{'wins', 'competitive wins', 300, function()
 			return entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveWins', entity.get_local_player()) or ''
 		end, 0},
-		{'hp', 0.5, function()
+		{'hp', 'current health', 0.5, function()
 			return entity.get_prop(entity.get_local_player(), 'm_iHealth') or 0
 		end, 0},
-		{'amr', 0.5, function()
+		{'amr', 'current armor', 0.5, function()
 			return entity.get_prop(entity.get_local_player(), 'm_ArmorValue') or 0
 		end, 0},
-		{'loc', 0.5, function()
+		{'loc', 'current location', 0.5, function()
 			return entity.get_prop(entity.get_local_player(), 'm_szLastPlaceName') or ''
 		end, 0},
-		{'kills', 1, function()
+		{'kills', 'current kills', 1, function()
 			return entity.get_prop(entity.get_player_resource(), 'm_iKills', entity.get_local_player()) or 0
 		end, 0},
-		{'deaths', 1, function()
+		{'deaths', 'current deaths', 1, function()
 			return entity.get_prop(entity.get_player_resource(), 'm_iDeaths', entity.get_local_player()) or 0
 		end, 0},
-		{'assists', 1, function()
+		{'assists', 'current assists', 1, function()
 			return entity.get_prop(entity.get_player_resource(), 'm_iAssists', entity.get_local_player()) or 0
 		end, 0},
-		{'headchance', 1, function()
+		{'headchance', 'current headshot chance',  1, function()
 			local LocalPlayer = entity.get_local_player()
 			local TotalKills = CPLua.Clantag.processedData.kills
 			local HeadshotKills = entity.get_prop(entity.get_player_resource(), 'm_iMatchStats_HeadShotKills_Total', entity.get_local_player())
@@ -652,11 +652,11 @@ function Initiate()
 				return math.ceil( (HeadshotKills / TotalKills) * 100 )
 			end
 		end, 0},
-		{'c4', 1, function()
+		{'c4', 'displays BOMB if carrying bomb', 1, function()
 			CPLua.Clantag.last = '' -- TEMP
 			-- Print C4 if has c4
 		end, 0},
-		{'wep', 0.25, function()
+		{'wep', 'current weapon name', 0.25, function()
 			if ( not csgo_weapons_success ) then return end
 
 			local LocalPlayer = entity.get_local_player()
@@ -672,7 +672,7 @@ function Initiate()
 			
 			return weapon.name
 		end, 0},
-		{'amo', 0.25, function()
+		{'ammo', 'current weapon ammo', 0.25, function()
 			local LocalPlayer = entity.get_local_player()
 
 			local WeaponENT = entity.get_player_weapon(LocalPlayer)
@@ -683,27 +683,28 @@ function Initiate()
 			
 			return Ammo
 		end, 0},
-		{'id', 9999, function()
+		{'id', 'current steam id', 9999, function()
 			return CPPanorama.steamID
 		end, 0},
-		{'bomb', 1, function()
+		{'bomb', 'bomb timer countdown', 1, function()
 			local c4 = entity.get_all("CPlantedC4")[1]
 			if c4 == nil or entity.get_prop(c4, "m_bBombDefused") == 1 or entity.get_local_player() == nil then return '' end
 			local c4_time = entity.get_prop(c4, "m_flC4Blow") - globals.curtime()
    			return c4_time ~= nil and c4_time > 0 and math.floor(c4_time) or ''
 		end, 0},
-		{'doa', 0.5, function()
+		{'doa', 'displays DEAD or ALIVE', 0.5, function()
 			return entity.is_alive(entity.get_local_player()) and 'ALIVE' or 'DEAD'
 		end, 0},
-		{'fps', 0.5, function()
+		{'fps', 'current FPS', 0.05, function()
 			return AccumulateFps()
 		end, 0},
-		{'ping', 0.5, function()
+		{'ping', 'current ping', 0.5, function()
 			return math.floor(client.latency()*1000)
 		end, 0}
 	}
 	
 	ui.set_visible(CPLua.Clantag.template, false)
+	ui.set_visible(CPLua.Clantag.helper, false)
 
 	ui.set_callback(CPLua.Clantag.enable, function(self)
 		local Status = ui.get(self)
@@ -712,6 +713,41 @@ function Initiate()
 		end
 		CPLua.Clantag.last = ''
 		ui.set_visible(CPLua.Clantag.template, Status)
+		ui.set_visible(CPLua.Clantag.helper, Status)
+	end)
+
+	-- Helper Code
+	local LastTemplateText = ui.get(CPLua.Clantag.template)
+	client.set_event_callback('post_render', function()
+		local TemplateText = ui.get(CPLua.Clantag.template)
+		if ( TemplateText ~= LastTemplateText ) then
+			LastTemplateText = TemplateText
+			local Match = TemplateText:match('{(%a*)$')
+			if ( Match ) then
+				local FoundMatch = false
+				if ( Match:len() > 0 ) then
+					for i, v in ipairs(CPLua.Clantag.data) do
+						if ( v[1]:find(Match) ) then
+							FoundMatch = v
+							break;
+						end
+					end
+					if ( FoundMatch ) then
+						ui.set(CPLua.Clantag.helper, '{' .. FoundMatch[1] .. '} - ' .. FoundMatch[2])
+					else
+						ui.set(CPLua.Clantag.helper, 'no matches found for {' .. Match .. '}' )
+					end
+				else
+					local cmds = {}
+					for i, v in ipairs(CPLua.Clantag.data) do
+						cmds[#cmds + 1] = v[1]
+					end
+					ui.set(CPLua.Clantag.helper, table.concat(cmds, ', ') )
+				end
+			else
+				ui.set(CPLua.Clantag.helper, 'Helper: type { to get suggestions' )
+			end
+		end
 	end)
 
 	CPLua.loops[#CPLua.loops + 1] = function()
@@ -721,8 +757,9 @@ function Initiate()
 		-- DATA CALCULATIONS
 		for index, value in ipairs(CPLua.Clantag.data) do
 			local tag = value[1]
-			local delay = value[2]
-			local callfunc = value[3]
+			local desc = value[2]
+			local delay = value[3]
+			local callfunc = value[4]
 			
 			if ( globals.curtime() > value[4] ) then
 				local Output = callfunc()
@@ -744,7 +781,7 @@ function Initiate()
 	client.set_event_callback('player_connect_full', function()
 		CPLua.Clantag.last = ''
 		for index, value in ipairs(CPLua.Clantag.data) do
-			value[4] = 0
+			value[5] = 0
 		end
 	end)
 	client.set_event_callback('round_start', function()
