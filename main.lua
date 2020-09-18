@@ -700,6 +700,42 @@ function Initiate()
 		end, 0},
 		{'ping', 'current ping', 0.5, function()
 			return math.floor(client.latency()*1000)
+		end, 0},
+		{'date', 'current date (DD/MM/YY)', 300, function()
+			return os.date('%d/%m/%y', client.timestamp())
+		end, 0},
+		{'shortday', 'current name of the day (Mon, Wed, Tue)', 300, function()
+			return os.date('%a', client.timestamp())
+		end, 0},
+		{'longday', 'current name of the day (Monday, Wednesday, Tuesday)', 300, function()
+			return os.date('%A', client.timestamp())
+		end, 0},
+		{'day', 'current day of the month', 300, function()
+			return os.date('%d', client.timestamp())
+		end, 0},
+		{'month', 'current month number', 300, function()
+			return os.date('%m', client.timestamp())
+		end, 0},
+		{'year', 'current year number', 300, function()
+			return os.date('%m', client.timestamp())
+		end, 0},
+		{'time12', 'current time in 12 hour time', 1, function()
+			return os.date('%I:%M:%S %P', client.timestamp())
+		end, 0},
+		{'time24', 'current time in 24 hour time', 1, function()
+			return os.date('%i:%M:%S', client.timestamp())
+		end, 0},
+		{'hour12', 'hour in 12 hour time', 1, function()
+			return os.date('%I', client.timestamp())
+		end, 0},
+		{'hour24', 'hour in 24 hour time', 1, function()
+			return os.date('%i', client.timestamp())
+		end, 0},
+		{'minutes', 'current minutes in system time', 1, function()
+			return os.date('%M', client.timestamp())
+		end, 0},
+		{'seconds', 'current seconds in system time', 1, function()
+			return os.date('%S', client.timestamp())
 		end, 0}
 	}
 	
@@ -727,7 +763,7 @@ function Initiate()
 				local FoundMatch = false
 				if ( Match:len() > 0 ) then
 					for i, v in ipairs(CPLua.Clantag.data) do
-						if ( v[1]:sub(1, Match:len()) == Match ) then
+						if ( v[1]:sub(1, Match:len()) == Match:lower() ) then
 							FoundMatch = v
 							break;
 						end
@@ -1334,10 +1370,10 @@ end
 -- Utilities / Libraries
 function processTags(str, vars)
 	if not vars then
-		vars = str
+		vars = str:lower()
 		str = vars[1]
 	  end
-	  return (string.gsub(str, "({([^}]+)})",
+	  return (string.gsub(str:lower(), "({([^}]+)})",
 		function(whole,i)
 		  return vars[i] or whole
 		end))
