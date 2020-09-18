@@ -326,6 +326,9 @@ CPPanoramaMainMenu = panorama.loadstring([[
 	}
 ]], 'CSGOMainMenu')();
 
+-- Too clean to put in one of the above panoramas, looks sexy AF
+local Date = panorama.loadstring('return ts => new Date(ts * 1000)')()
+
 -- Reset debug mode incase restart of script
 CPPanorama.setDebugMode(false)
 
@@ -702,40 +705,66 @@ function Initiate()
 			return math.floor(client.latency()*1000)
 		end, 0},
 		{'date', 'current date (DD/MM/YY)', 300, function()
-			return os.date('%d/%m/%y', client.timestamp())
+			local Data = Date(client.unix_time())
+			local Day = string.format("%02d", Data.getDate())
+			local Month = string.format("%02d", Data.getMonth()+1)
+			return string.format('%s/%s/%s', Day, Month, tostring(Data.getFullYear()):sub(3,4))
 		end, 0},
 		{'shortday', 'current name of the day (Mon, Wed, Tue)', 300, function()
-			return os.date('%a', client.timestamp())
+			local DaysOfWeek = {'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'}
+			local Data = Date(client.unix_time())
+			return DaysOfWeek[Data.getDay()+1]
 		end, 0},
 		{'longday', 'current name of the day (Monday, Wednesday, Tuesday)', 300, function()
-			return os.date('%A', client.timestamp())
+			local DaysOfWeek = {'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'}
+			local Data = Date(client.unix_time())
+			return DaysOfWeek[Data.getDay()+1]
 		end, 0},
 		{'day', 'current day of the month', 300, function()
-			return os.date('%d', client.timestamp())
+			local Data = Date(client.unix_time())
+			return string.format("%02d", Data.getDate())
 		end, 0},
 		{'month', 'current month number', 300, function()
-			return os.date('%m', client.timestamp())
+			local Data = Date(client.unix_time())
+			return string.format("%02d", Data.getMonth()+1)
 		end, 0},
 		{'year', 'current year number', 300, function()
-			return os.date('%m', client.timestamp())
+			local Data = Date(client.unix_time())
+			return tostring(Data.getFullYear()):sub(3,4)
 		end, 0},
 		{'time12', 'current time in 12 hour time', 1, function()
-			return os.date('%I:%M:%S %P', client.timestamp())
+			local Data = Date(client.unix_time())
+			local Hours = Data.getHours()
+			local Suffix = Hours > 12 and 'PM' or 'AM'
+			Hours = string.format("%02d", Hours > 12 and Hours - 12 or Hours)
+			local Minutes = string.format("%02d", Data.getMinutes())
+			local Seconds = string.format("%02d", Data.getSeconds())
+			return string.format('%s:%s:%s %s', Hours, Minutes, Seconds, Suffix)
 		end, 0},
 		{'time24', 'current time in 24 hour time', 1, function()
-			return os.date('%i:%M:%S', client.timestamp())
+			
 		end, 0},
 		{'hour12', 'hour in 12 hour time', 1, function()
-			return os.date('%I', client.timestamp())
+			local Data = Date(client.unix_time())
+			local Hours = Data.getHours()
+			return string.format("%02d", Hours > 12 and Hours - 12 or Hours)
 		end, 0},
-		{'hour24', 'hour in 24 hour time', 1, function()
-			return os.date('%i', client.timestamp())
+		{'hour24', 'hour in 24 hour time', 1, function()	
+			local Data = Date(client.unix_time())
+			return Data.getHours()
 		end, 0},
-		{'minutes', 'current minutes in system time', 1, function()
-			return os.date('%M', client.timestamp())
+		{'mins', 'current minutes in system time', 1, function()
+			local Data = Date(client.unix_time())
+			return string.format("%02d", Data.getMinutes())
 		end, 0},
-		{'seconds', 'current seconds in system time', 1, function()
-			return os.date('%S', client.timestamp())
+		{'secs', 'current seconds in system time', 1, function()
+			local Data = Date(client.unix_time())
+			return string.format("%02d", Data.getSeconds())
+		end, 0},
+		{'timesuffix', '12 hour time suffix', 1, function()
+			local Data = Date(client.unix_time())
+			local Hours = Data.getHours()
+			return Hours > 12 and 'PM' or 'AM'
 		end, 0}
 	}
 	
@@ -985,8 +1014,8 @@ function Initiate()
 								ReplaceData.id = v[1]
 								ReplaceData.times = #data
 								ReplaceData.price = data[1].Price
-								ReplaceData.marketID = data[1].MarketID
-								ReplaceData.link =  'https://lolz.guru/market/'..ReplaceData.marketID
+								ReplaceData.marketid = data[1].MarketID
+								ReplaceData.link =  'https://lolz.guru/market/'..ReplaceData.marketid
 
 								local Prices = {}
 								local Links = {}
@@ -1370,12 +1399,12 @@ end
 -- Utilities / Libraries
 function processTags(str, vars)
 	if not vars then
-		vars = str:lower()
+		vars = str
 		str = vars[1]
 	  end
-	  return (string.gsub(str:lower(), "({([^}]+)})",
+	  return (string.gsub(str, "({([^}]+)})",
 		function(whole,i)
-		  return vars[i] or whole
+		  return vars[i:lower()] or whole
 		end))
 end
 
