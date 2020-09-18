@@ -10,7 +10,7 @@
     Script Name: Private $CP Script
     Script Author: csmit195
     Script Version: 1.0
-    Script Description: Don't even blanken ask!
+    Script Description: A soon to be public private lua for all of man kind.
 ]]
 local js = panorama.open()
 local CompetitiveMatchAPI = js.CompetitiveMatchAPI
@@ -27,6 +27,7 @@ local Options = {
 	debugMode = false
 }
 
+--#region Startup Panorama Code
 local CPPanorama = panorama.loadstring([[
 	LocalSteamID = MyPersonaAPI.GetXuid();
 
@@ -47,20 +48,6 @@ local CPPanorama = panorama.loadstring([[
 			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
 		}
 	}
-
-
-	/*if ( typeof cp_ReplacePartyChat == 'undefined' ) {
-		cp_ReplacePartyChat = {};
-		cp_ReplacePartyChat.OldFunc = PartyListAPI.SessionCommand;
-	}
-	PartyListAPI.SessionCommand = (...args)=>{
-		if ( typeof args[0] == 'string' && typeof args[1] == 'string' && args[0] == 'Game::Chat' ) {
-			$.Msg.apply(null, args);
-		} else {
-			$.Msg.apply(null, args);
-			cp_ReplacePartyChat.OldFunc.apply(null, args);
-		}
-	};*/
 	
 	if ( typeof cp_DelayAutoAccept == 'undefined' ) {
 		cp_DelayAutoAccept = {};
@@ -118,6 +105,7 @@ local CPPanorama = panorama.loadstring([[
 		/*subscribe("http://localhost:1341/GlobalPoll", function (data) {
 			$.Msg("Data:", data, typeof data);
 		});*/
+
 		cp_LongPollSubscribe = {};
 	}
 
@@ -328,21 +316,20 @@ CPPanoramaMainMenu = panorama.loadstring([[
 
 -- Too clean to put in one of the above panoramas, looks sexy AF
 local Date = panorama.loadstring('return ts => new Date(ts * 1000)')()
+--#endregion
 
 -- Reset debug mode incase restart of script
 CPPanorama.setDebugMode(false)
 
--- adding into an init function just so I can better organise dependencies from other lib's at the bottom, until i work on a custom require lib from github.
 function Initiate()
-	-- [[ LUA TAB ]]
-	local CPLua = {
-		loops = {}
-	} 
-	CPLua.Header = ui.new_label('Lua', 'B', '=--------------  [   $CP Start   ]  --------------=')
-	-- START AutoAccept
+	local CPLua = {loops = {}}
+
+	CPLua.Header = ui.new_label('Lua', 'B', '=========  [   $CP Start   ]  =========')
+	
+	--#region Delayed Auto Accept
 	CPLua.AutoAccept = {}
 	CPLua.AutoAccept.originalAutoAccept = ui.reference('MISC', 'Miscellaneous', 'Auto-accept matchmaking')
-	CPLua.AutoAccept.enable = ui.new_checkbox('Lua', 'B', 'Auto Accept Match')
+	CPLua.AutoAccept.enable = ui.new_checkbox('Lua', 'B', 'Delayed Auto Accept')
 	CPLua.AutoAccept.delay = ui.new_slider('Lua', 'B', 'Auto Accept Delay', 1, 21, 3, true, 's')
 
 	ui.set_visible(CPLua.AutoAccept.delay, false)
@@ -365,23 +352,11 @@ function Initiate()
 			ui.set(CPLua.AutoAccept.enable, false)
 		end
 	end)
-	-- END AutoAccept
+	--#endregion
 
-	--[[ START AutoAcceptDetect cp_AutoAcceptDetection
-	CPLua.AutoAcceptDetect = {}
-	CPLua.AutoAcceptDetect.enable = ui.new_checkbox('Lua', 'B', 'Auto Accept Detect')
-
-	CPPanorama.cp_AutoAcceptDetection.toggle(false);
-
-	ui.set_callback(CPLua.AutoAcceptDetect.enable, function(self)
-		local Status = ui.get(self)
-		CPPanorama.cp_AutoAcceptDetection.toggle(Status)
-	end)
-	-- END AutoAcceptDetect]]
-
-	-- START DerankScore
+	--#region Auto Derank Score
 	CPLua.DerankScore = {}
-	CPLua.DerankScore.enable = ui.new_checkbox('Lua', 'B', 'Auto Derank')
+	CPLua.DerankScore.enable = ui.new_checkbox('Lua', 'B', 'Auto Derank Score')
 	CPLua.DerankScore.method = ui.new_multiselect('Lua', 'B', 'Method', {'Round Prestart', 'Round Start', 'During Timeout', 'Round End'})
 
 	ui.set_visible(CPLua.DerankScore.method, false)
@@ -464,9 +439,9 @@ function Initiate()
 			printDebug('derank false')
 		end
 	end)
-	-- END DerankScore
+	--#endregion
 
-	-- START AutoCSGOStats
+	--#region Auto Open CsgoStats.gg
 	CPLua.AutoCSGOStats = {}
 	CPLua.AutoCSGOStats.enable = ui.new_checkbox('Lua', 'B', 'Auto CSGOStats.gg')
 
@@ -476,9 +451,9 @@ function Initiate()
 		local Status = ui.get(self)
 		CPPanorama.cp_AutoCSGOStats.toggle(Status)
 	end)
-	-- END AutoCSGOStats
+	--#endregion
 
-	-- START MatchStartBeep cp_PlaySound('popup_accept_match_beep', 'MOUSE')
+	--#region Match Start Beep
 	CPLua.MatchStartBeep = {}
 	CPLua.MatchStartBeep.enable = ui.new_checkbox('Lua', 'B', 'Match Start Beep')
 	CPLua.MatchStartBeep.repeatTimes = ui.new_slider('Lua', 'B', 'Times (x)', 1, 30, 1)
@@ -552,7 +527,7 @@ function Initiate()
 		local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1]
 		printDebug(SelectedSound, '>', ReferenceSounds[SelectedSound])
 		if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
-			CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+			CPLua.MatchStartBeep.PlaySound()
 		end
 	end)
 
@@ -573,37 +548,42 @@ function Initiate()
 		ui.set_visible(CPLua.MatchStartBeep.repeatInterval, ui.get(CPLua.MatchStartBeep.repeatTimes) ~= 1 and Status)
 	end)
 
+	CPLua.MatchStartBeep.PlaySound = function()
+		local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1] or 'Default (Beep)'
+		if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
+			local Times = ui.get(CPLua.MatchStartBeep.repeatTimes)
+			local Interval = ui.get(CPLua.MatchStartBeep.repeatInterval)
+			if ( Times == 1 ) then
+				CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+			else
+				for i=1, Times do
+					client.delay_call(Times == 1 and 0 or ( ( i - 1 ) * Interval ) / 1000, function()
+						printDebug('done')
+						CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+					end)
+				end
+			end
+		end
+	end
+
 	ui.set_callback(CPLua.MatchStartBeep.repeatTimes, function(self)
 		local Status = ui.get(self)
 		ui.set_visible(CPLua.MatchStartBeep.repeatInterval, Status ~= 1)
 	end)
+	
 
 	client.set_event_callback('round_start', function()
 		if ( ui.get(CPLua.MatchStartBeep.enable) ) then
 			local mp_freezetime = cvar.mp_freezetime:get_int()
 			local percent = ui.get(CPLua.MatchStartBeep.delay) / 100
 			client.delay_call(mp_freezetime * percent, function()
-				local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1] or 'Default (Beep)'
-				if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
-					local Times = ui.get(CPLua.MatchStartBeep.repeatTimes)
-					local Interval = ui.get(CPLua.MatchStartBeep.repeatInterval)
-					if ( Times == 1 ) then
-						CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
-					else
-						for i=1, Times do
-							client.delay_call(Times == 1 and 0 or ( ( i - 1 ) * Interval ) / 1000, function()
-								printDebug('done')
-								CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
-							end)
-						end
-					end
-				end
+				CPLua.MatchStartBeep.PlaySound()
 			end)
 		end
 	end)
-	-- END MatchStartBeep
+	--#endregion
 
-	-- START CustomClanTag
+	--#region Custom Clantag Builder
 	CPLua.Clantag = {}
 	CPLua.Clantag.last = ''
 	CPLua.Clantag.enable = ui.new_checkbox('Lua', 'B', 'Clantag Builder [BETA]')
@@ -612,7 +592,6 @@ function Initiate()
 
 	CPLua.Clantag.processedData = {}
 
-	-- format {tag, refreshrate, updatefunc}
 	CPLua.Clantag.data = {
 		{'rank', 'competitive ranking', 300, function()
 			local currentRank = entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveRanking', entity.get_local_player())
@@ -742,7 +721,11 @@ function Initiate()
 			return string.format('%s:%s:%s %s', Hours, Minutes, Seconds, Suffix)
 		end, 0},
 		{'time24', 'current time in 24 hour time', 1, function()
-			
+			local Data = Date(client.unix_time())
+			local Hours = string.format("%02d", Data.getHours())
+			local Minutes = string.format("%02d", Data.getMinutes())
+			local Seconds = string.format("%02d", Data.getSeconds())
+			return string.format('%s:%s:%s', Hours, Minutes, Seconds)
 		end, 0},
 		{'hour12', 'hour in 12 hour time', 1, function()
 			local Data = Date(client.unix_time())
@@ -853,9 +836,76 @@ function Initiate()
 	client.set_event_callback('round_start', function()
 		CPLua.Clantag.last = ''
 	end)
-	-- END CustomClanTag
+	--#endregion
 
-	-- START ReportTool
+	--#region Custom Killsay Builder
+	CPLua.CustomKillSay = {}
+	CPLua.CustomKillSay.enable = ui.new_checkbox('Lua', 'B', 'Killsay Builder [BETA]')
+	ui.set_visible(CPLua.CustomKillSay.enable, false)
+	CPLua.CustomKillSay.template = ui.new_textbox('Lua', 'B', ' ')
+	CPLua.CustomKillSay.helper = ui.new_label('Lua', 'B', 'Helper: type { to get suggestions')
+
+	CPLua.CustomKillSay.processedData = {}
+
+	
+	ui.set_visible(CPLua.CustomKillSay.template, false)
+	ui.set_visible(CPLua.CustomKillSay.helper, false)
+
+	ui.set_callback(CPLua.CustomKillSay.enable, function(self)
+		local Status = ui.get(self)
+		if ( not Status ) then
+			client.set_clan_tag('')
+		end
+		ui.set_visible(CPLua.CustomKillSay.template, Status)
+		ui.set_visible(CPLua.CustomKillSay.helper, Status)
+	end)
+
+	-- Helper Code
+	local helperData = {
+		{'kills', 'victims kills', function(ent)
+			return
+		end},
+	}
+
+	local LastKillsayText = ui.get(CPLua.CustomKillSay.template)
+	client.set_event_callback('post_render', function()
+		local TemplateText = ui.get(CPLua.CustomKillSay.template)
+		if ( TemplateText ~= LastKillsayText ) then
+			LastKillsayText = TemplateText
+			local Match = TemplateText:match('{(%a*%d*)$')
+			if ( Match ) then
+				local FoundMatch = false
+				if ( Match:len() > 0 ) then
+					for i, v in ipairs(CPLua.CustomKillSay.data) do
+						if ( v[1]:sub(1, Match:len()) == Match:lower() ) then
+							FoundMatch = v
+							break;
+						end
+					end
+					if ( FoundMatch ) then
+						ui.set(CPLua.CustomKillSay.helper, '{' .. FoundMatch[1] .. '} - ' .. FoundMatch[2])
+					else
+						ui.set(CPLua.CustomKillSay.helper, 'no matches found for {' .. Match .. '}' )
+					end
+				else
+					local cmds = {}
+					for i, v in ipairs(CPLua.CustomKillSay.data) do
+						cmds[#cmds + 1] = v[1]
+					end
+					ui.set(CPLua.CustomKillSay.helper, table.concat(cmds, ', ') )
+				end
+			else
+				ui.set(CPLua.CustomKillSay.helper, 'Helper: type { to get suggestions' )
+			end
+		end
+	end)
+
+	client.set_event_callback('round_start', function()
+		--processTags(ui.get(CPLua.CustomKillSay.template))
+	end)
+	--#endregion
+
+	--#region Report Enemy Tool
 	CPLua.ReportTool = {}
 	CPLua.ReportTool.enable = ui.new_checkbox('Lua', 'B', 'Report Tool')
 	
@@ -904,9 +954,9 @@ function Initiate()
 	end)
 	ui.set_visible(CPLua.ReportTool.types, false)
 	ui.set_visible(CPLua.ReportTool.submit, false)
-	-- END ReportTool
+	--#endregion
 
-	-- START CrackTool
+	--#region Crack Checker
 	if ( http_success ) then
 		CPLua.CrackTool = {state=false}
 		CPLua.CrackTool.enable = ui.new_checkbox('Lua', 'B', 'Crack Checker')
@@ -1083,9 +1133,9 @@ function Initiate()
 		ui.set_visible(CPLua.CrackTool.start, false)
 		ui.set_visible(CPLua.CrackTool.stop, false)
 	end
-	-- END CrackTool
+	--#endregion
 
-	-- START FaceITTool
+	--#region Face.it Checker
 	if ( http_success ) then
 		CPLua.FaceITTool = {state=false}
 		CPLua.FaceITTool.enable = ui.new_checkbox('Lua', 'B', 'FaceIT Checker')
@@ -1193,9 +1243,9 @@ function Initiate()
 		ui.set_visible(CPLua.FaceITTool.start, false)
 		ui.set_visible(CPLua.FaceITTool.stop, false)
 	end
-	-- END FaceITTool
+	--#endregion
 
-	-- START PartyChatUtils
+	--#region Party Chat Utilities
 	CPLua.PartyChatUtils = {}
 	CPLua.PartyChatUtils.enable = ui.new_checkbox('Lua', 'B', 'Party Chat Utilities')
 
@@ -1208,9 +1258,9 @@ function Initiate()
 			LastTick = globals.realtime()
 		end
 	end)
-	-- END PartyChatUtils
+	--#endregion
 
-	-- START DebugOptions
+ 	--#region DebugOptions
 	CPLua.DebugOptions = {}
 	CPLua.DebugOptions.enable = ui.new_checkbox('Lua', 'B', 'Debug Mode (console)')
 	ui.set_callback(CPLua.DebugOptions.enable, function(self)
@@ -1218,19 +1268,19 @@ function Initiate()
 		Options.debugMode = Status
 		CPPanorama.setDebugMode(Status)
 	end)
-	-- END DebugOptions
+	--#endregion
 
-	CPLua.Footer = ui.new_label('Lua', 'B', '=-------------  [   $CP Finish   ]  -------------=')
+	CPLua.Footer = ui.new_label('Lua', 'B', '=========  [   $CP Finish   ]  =========')
 
-	-- START DrawLoops
+	--#region Paint Draw Loops
 	client.set_event_callback('paint', function()
 		for index, func in ipairs(CPLua.loops) do
 			func()
 		end
 	end)
-	-- END DrawLoops
+	--#endregion
 
-	-- [[ PLAYER TAB ]]
+	--#region Player List Adjustments
 	local style = {
 		letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' ",
 		trans = {
@@ -1394,9 +1444,10 @@ function Initiate()
 		MessageRepeater.cache = {}
 		ui.set(MessageRepeater.repeatMessages, false)
 	end)
+	--#endregion
 end
 
--- Utilities / Libraries
+--#region Utilities and Libraries
 function processTags(str, vars)
 	if not vars then
 		vars = str
@@ -1484,5 +1535,6 @@ function AccumulateFps()
 	end
 	return math.ceil(fps + 0.5)
 end
+--#endregion
 
 Initiate()
