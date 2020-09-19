@@ -179,7 +179,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		exec: (cmd, args) => { 
 			let ForceTeam = ( args[0] && args[0].toLowerCase() == 't' ) && 't' || 'ct';
 			let NotForceTeam = ForceTeam == 't' && 'ct' || 't';
-			LobbyAPI.StartMatchmaking('',ForceTeam,'','')
+			LobbyAPI.StartMatchmaking('',ForceTeam,'','');
 			//LobbyAPI.StartMatchmaking("","t","ct","")
 		}
 	});
@@ -288,18 +288,19 @@ CPPanoramaMainMenu = panorama.loadstring([[
 							let InnerChild = child.GetChild(child.GetChildCount()-1);
 							if ( InnerChild && InnerChild.text ) {
 								var Message = InnerChild.text.toLowerCase()
+								let Search = Message.search(/!(\w+)\s*(.*)$/i);
+								if ( Search != -1 ) { 
+									const args = Message.substr(Search).slice(Prefix.length).trim().split(' ');
+									const command = args.shift().toLowerCase();
 
-								for ( index=0; index < PartyChatCommands.length; index++ ) {
-									const ChatCommand = PartyChatCommands[index];
-									for ( i=0; i<ChatCommand.cmds.length; i++ ) {
-										const Alias = ChatCommand.cmds[i];
-										const Search = Message.search(`${Prefix}${Alias}`);
-										if ( Search != -1 ) {
-											const Msg = Message.substr(Search)
-											const args = Msg.slice(Prefix.length).trim().split(' ');
-											const command = args.shift().toLowerCase();
-											ChatCommand.exec(command, args)
-											break;
+									for ( index=0; index < PartyChatCommands.length; index++ ) {
+										const ChatCommand = PartyChatCommands[index];
+										for ( i=0; i<ChatCommand.cmds.length; i++ ) {
+											const Alias = ChatCommand.cmds[i]; 
+											if ( Alias == command ) { 
+												ChatCommand.exec(command, args)
+												break;
+											}
 										}
 									}
 								}
