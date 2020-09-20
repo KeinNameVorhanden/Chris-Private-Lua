@@ -174,7 +174,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 
 	let PartyChatCommands = [];
 	PartyChatCommands.push({
-		title: 'Help (!help)',
+		title: 'Help (!\u{200B}help)',
 		cmds: ['help', 'h'],
 		exec: (cmd, args) => {
 			if ( args.length == 0 ) {
@@ -196,7 +196,6 @@ CPPanoramaMainMenu = panorama.loadstring([[
 						const Title = `» List of Alias's: ${AliasString}`;
 						let Message = Title.split(' ').join('\u{00A0}');
 						let MySteamID = MyPersonaAPI.GetXuid();
-						$.Msg(Message);
 						PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
 						break;
 					}
@@ -205,7 +204,17 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		}
 	});
 	PartyChatCommands.push({
-		title: 'Start Queue (!startq)',
+		title: 'Gay Test (!\u{200B}gay)',
+		cmds: ['gay', 'fag', 'gaycheck', 'gc', 'fc', 'fagcheck', 'faggot', 'homo'],
+		exec: (cmd, args, sender) => {
+			let FagMsg = sender != '>.<' ? 'A FAG' : 'STRAIGHT';
+			let Message = `Your test result shows that you are ${FagMsg}`.split(' ').join('\u{00A0}');
+			let MySteamID = MyPersonaAPI.GetXuid();
+			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
+		}
+	});
+	PartyChatCommands.push({
+		title: 'Start Queue (!\u{200B}startq)',
 		cmds: ['start', 'startq', 'startqueue', 'queue', 'q'],
 		exec: (cmd, args) => { 
 			let ForceTeam = ( args[0] && args[0].toLowerCase() == 't' ) && 't' || 'ct';
@@ -215,14 +224,14 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		}
 	});
 	PartyChatCommands.push({
-		title: 'Stop Queue (!stopq)',
+		title: 'Stop Queue (!\u{200B}stopq)',
 		cmds: ['stop', 'stopq', 'stopqueue', 'sq', 's'],
 		exec: (cmd, args) => { 
 			LobbyAPI.StopMatchmaking()
 		}
 	});
 	PartyChatCommands.push({
-		title: 'Restart Queue (!restartq)',
+		title: 'Restart Queue (!\u{200B}restartq)',
 		cmds: ['restart', 'restartq', 'restartqueue', 'rs'],
 		exec: (cmd, args) => { 
 			LobbyAPI.StopMatchmaking()
@@ -232,21 +241,21 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		}
 	});
 	PartyChatCommands.push({
-		title: 'Maps (!maps dust2, safehouse)',
+		title: 'Maps (!\u{200B}maps dust2, safehouse)',
 		cmds: ['maps', 'map', 'setmaps', 'changemap', 'changemaps'],
 		exec: (cmd, args) => { 
 
 		}
 	});
 	PartyChatCommands.push({
-		title: 'Kick (!kick <partial:name>|<steamid>|<friendcode>)',
+		title: 'Kick (!\u{200B}kick <partial:name>|<steamid>|<friendcode>)',
 		cmds: ['stop', 'stopq', 'stopqueue'],
 		exec: (cmd, args) => { 
 
 		}
 	});
 	PartyChatCommands.push({
-		title: 'Invite (!invite <steamid>|<friendcode>)',
+		title: 'Invite (!\u{200B}invite <steamid>|<friendcode>)',
 		cmds: ['inv', 'invite', 'add'],
 		exec: (cmd, args) => {
 			for ( i = 0; i < args.length; i++ ) {
@@ -258,7 +267,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 		}
 	});
 	PartyChatCommands.push({
-		title: 'Crack Checker (!crackcheck)',
+		title: 'Crack Checker (!\u{200B}crackcheck)',
 		cmds: ['cc', 'crackcheck', 'check', 'crack', 'cracks'],
 		exec: (cmd, args) => {
 			for ( i = 0; i < PartyListAPI.GetCount(); i++ ) {
@@ -329,7 +338,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 										for ( i=0; i<ChatCommand.cmds.length; i++ ) {
 											const Alias = ChatCommand.cmds[i]; 
 											if ( Alias == command ) { 
-												ChatCommand.exec(command, args)
+												ChatCommand.exec(command, args, Message.substr(0, Search-1))
 												break;
 											}
 										}
