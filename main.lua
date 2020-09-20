@@ -174,6 +174,37 @@ CPPanoramaMainMenu = panorama.loadstring([[
 
 	let PartyChatCommands = [];
 	PartyChatCommands.push({
+		title: 'Help (!help)',
+		cmds: ['help', 'h'],
+		exec: (cmd, args) => {
+			if ( args.length == 0 ) {
+				for ( i=1; i<PartyChatCommands.length; i++ ) {
+					let ChatCommand = PartyChatCommands[i];
+					const Title = `» ${ChatCommand.title}`;
+					const Alias = ChatCommand.cmds;
+					let Message = Title.split(' ').join('\u{00A0}');
+					let MySteamID = MyPersonaAPI.GetXuid();
+					PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
+				}
+			} else {
+				for ( i=1; i<PartyChatCommands.length; i++ ) {
+					let ChatCommand = PartyChatCommands[i];
+					const Alias = ChatCommand.cmds;
+					const FoundAlias = Alias.find(item => item == args[0]);
+					if ( FoundAlias ) {
+						const AliasString = Alias.join(', ');
+						const Title = `» List of Alias's: ${AliasString}`;
+						let Message = Title.split(' ').join('\u{00A0}');
+						let MySteamID = MyPersonaAPI.GetXuid();
+						$.Msg(Message);
+						PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
+						break;
+					}
+				}
+			}
+		}
+	});
+	PartyChatCommands.push({
 		title: 'Start Queue (!startq)',
 		cmds: ['start', 'startq', 'startqueue', 'queue', 'q'],
 		exec: (cmd, args) => { 
@@ -1057,7 +1088,7 @@ function Initiate()
 						http.request('GET', URL, function(success, response)
 							if not success or response.status ~= 200 or not CPLua.CrackTool.state then return end
 							local data = json.parse(response.body)
-							print(data)
+							print(response.body)
 							if ( data and data.success ~= nil and data.success == false ) then
 								printDebug('well fuck, we found nothing')
 							elseif ( data ) then
