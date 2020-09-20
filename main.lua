@@ -1057,6 +1057,7 @@ function Initiate()
 						http.request('GET', URL, function(success, response)
 							if not success or response.status ~= 200 or not CPLua.CrackTool.state then return end
 							local data = json.parse(response.body)
+							print(data)
 							if ( data and data.success ~= nil and data.success == false ) then
 								printDebug('well fuck, we found nothing')
 							elseif ( data ) then
