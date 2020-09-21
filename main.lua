@@ -1063,22 +1063,23 @@ function Initiate()
 
 	ui.set(CPLua.CrackTool.customformat)
 
-	CPLua.CrackTool.CheckCrack = function(SteamID, Targets, TargetIndex)
+	CPLua.CrackTool.CheckCrack = function(SteamID, Name, Callback)
 		local URL = 'https://csmit195.me/api/lolzteam/' .. SteamID
 		http.request('GET', URL, function(success, response)
+			if not CPLua.CrackTool.state then return end
 			if not success or response.status ~= 200 then
 				print('[CRACK CHECKER] ', 'Error checking ', SteamID, ', attempting again.');
 				printDebug(response.body);
-				CPLua.CrackTool.CheckCrack(SteamID, Targets, TargetIndex)
+				CPLua.CrackTool.CheckCrack(SteamID, Callback)
 				return
 			end
 			local data = json.parse(response.body)
 			if ( data and data.success ~= nil and data.success == false ) then
-				print('[CRACK CHECKER] ', Targets[TargetIndex][2], '\'s account was not sold on Lolz.Team.')
+				print('[CRACK CHECKER] ', Name, '\'s account was not sold on Lolz.Team.')
 			elseif ( data ) then
 				local ReplaceData = {}
-				ReplaceData.name = Targets[TargetIndex][2]
-				ReplaceData.id = Targets[TargetIndex][1]
+				ReplaceData.name = Name
+				ReplaceData.id = SteamID
 				ReplaceData.times = #data
 				ReplaceData.price = data[1].Price
 				ReplaceData.marketid = data[1].MarketID
@@ -1106,14 +1107,7 @@ function Initiate()
 					CPLua.ChatMethods[value](Msg)
 				end
 			end
-
-			table.remove(Targets, TargetIndex)
-			if ( #Targets == 0 ) then
-				CPLua.CrackTool.state = false
-
-				ui.set_visible(CPLua.CrackTool.start, true)
-				ui.set_visible(CPLua.CrackTool.stop, false)
-			end
+			Callback()
 		end)
 	end
 
@@ -1128,7 +1122,7 @@ function Initiate()
 			for Player=1, globals.maxplayers() do
 				if ( not CPLua.CrackTool.state ) then break end
 				local SteamXUID = GameStateAPI.GetPlayerXuidStringFromEntIndex(Player)
-				if ( SteamXUID:len() > 5 ) then
+				if ( SteamXUID and SteamXUID:len() == 17 ) then
 					if ( Target == 'Everyone' ) then
 						Targets[#Targets + 1] = {SteamXUID, entity.get_player_name(Player)}
 					elseif ( Target == 'Teammates' and not entity.is_enemy(Player) ) then
@@ -1138,10 +1132,17 @@ function Initiate()
 					end
 				end
 			end
+			local Completed = 0
 			if ( #Targets > 0 ) then
 				for i, v in ipairs(Targets) do
-					client.delay_call(1*(i-1), function()
-						CPLua.CrackTool.CheckCrack(v[1], Targets, i)
+					client.delay_call(0.25*(i-0.25), function()
+						CPLua.CrackTool.CheckCrack(v[1], v[2], function()
+							Completed = Completed + 1
+							if ( Completed == #Targets ) then
+								ui.set_visible(CPLua.CrackTool.start, true)
+								ui.set_visible(CPLua.CrackTool.stop, false)
+							end
+						end)
 					end)
 				end
 			elseif ( #Targets == 0 ) then
