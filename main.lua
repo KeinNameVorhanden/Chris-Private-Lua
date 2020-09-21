@@ -274,7 +274,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 			for ( i = 0; i < PartyListAPI.GetCount(); i++ ) {
 				let SteamID = PartyListAPI.GetXuidByIndex(i);
 				let SteamName = PartyListAPI.GetFriendName(SteamID);
-				$.AsyncWebRequest(`https://csmit195.me/api/lolzteam/${SteamID}`,
+				$.AsyncWebRequest(`http://nopmb.wtf:1833/api/lolzteam/${SteamID}`,
 					{
 						type:"GET",
 						complete:function(e){
@@ -1088,7 +1088,7 @@ function Initiate()
 			if ( #Targets > 0 ) then
 				local OutputMethods = ui.get(CPLua.CrackTool.output)
 				for i, v in ipairs(Targets) do
-					local URL = 'https://csmit195.me/api/lolzteam/' .. v[1]
+					local URL = 'http://nopmb.wtf:1833/api/lolzteam/' .. v[1]
 
 					http.request('GET', URL, function(success, response)
 						if not success or response.status ~= 200 or not CPLua.CrackTool.state then return end
@@ -1206,7 +1206,7 @@ function Initiate()
 			if ( #Targets > 0 ) then
 				local OutputMethods = ui.get(CPLua.FaceITTool.output)
 				for i, v in ipairs(Targets) do
-					local URL = 'https://csmit195.me/api/faceit/' .. v[1]
+					local URL = 'http://nopmb.wtf:1833/api/faceit/' .. v[1]
 
 					http.request('GET', URL, function(success, response)
 						if not success or response.status ~= 200 or not CPLua.FaceITTool.state then return end
