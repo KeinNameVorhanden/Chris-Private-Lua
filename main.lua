@@ -274,7 +274,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 			for ( i = 0; i < PartyListAPI.GetCount(); i++ ) {
 				let SteamID = PartyListAPI.GetXuidByIndex(i);
 				let SteamName = PartyListAPI.GetFriendName(SteamID);
-				$.AsyncWebRequest(`http://nopmb.wtf:1833/api/lolzteam/${SteamID}`,
+				$.AsyncWebRequest(`https://csmit195.me/api/lolzteam/${SteamID}`,
 					{
 						type:"GET",
 						complete:function(e){
@@ -1063,6 +1063,60 @@ function Initiate()
 
 	ui.set(CPLua.CrackTool.customformat)
 
+	CPLua.CrackTool.CheckCrack = function(SteamID, Targets, TargetIndex)
+		local URL = 'https://csmit195.me/api/lolzteam/' .. SteamID
+		http.request('GET', URL, function(success, response)
+			if not success or response.status ~= 200 then
+				print('[CRACK CHECKER] ', 'Error checking ', SteamID, ', attempting again.');
+				printDebug(response.body);
+				CPLua.CrackTool.CheckCrack(SteamID, Targets, TargetIndex)
+				return
+			end
+			local data = json.parse(response.body)
+			if ( data and data.success ~= nil and data.success == false ) then
+				print('[CRACK CHECKER] ', Targets[TargetIndex][2], '\'s account was not sold on Lolz.Team.')
+			elseif ( data ) then
+				local ReplaceData = {}
+				ReplaceData.name = Targets[TargetIndex][2]
+				ReplaceData.id = Targets[TargetIndex][1]
+				ReplaceData.times = #data
+				ReplaceData.price = data[1].Price
+				ReplaceData.marketid = data[1].MarketID
+				ReplaceData.link =  'https://lolz.guru/market/'..ReplaceData.marketid
+
+				local Prices = {}
+				local Links = {}
+				local Currency = ''
+				for index, value in ipairs(data) do
+					Prices[#Prices + 1] = value.Price
+					Links[#Links + 1] = value.MarketID
+					Currency = value.Currency
+				end
+				ReplaceData.min = math.min(unpack(Prices))
+				ReplaceData.max = math.max(unpack(Prices))
+				
+				ReplaceData.links = table.concat(Links, ', ')
+
+				local Default = '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}'
+				if ( ui.get(CPLua.CrackTool.customformatEnable) ) then
+					Default = ui.get(CPLua.CrackTool.customformat)
+				end
+				local Msg = processTags(Default, ReplaceData);
+				for index, value in ipairs(ui.get(CPLua.CrackTool.output)) do
+					CPLua.ChatMethods[value](Msg)
+				end
+			end
+
+			table.remove(Targets, TargetIndex)
+			if ( #Targets == 0 ) then
+				CPLua.CrackTool.state = false
+
+				ui.set_visible(CPLua.CrackTool.start, true)
+				ui.set_visible(CPLua.CrackTool.stop, false)
+			end
+		end)
+	end
+
 	CPLua.CrackTool.StartStop = function(uiIndex)
 		local State = ui.name(uiIndex) == 'Start'
 		CPLua.CrackTool.state = State
@@ -1084,59 +1138,10 @@ function Initiate()
 					end
 				end
 			end
-			local Completed = 0
 			if ( #Targets > 0 ) then
-				local OutputMethods = ui.get(CPLua.CrackTool.output)
 				for i, v in ipairs(Targets) do
-					local URL = 'http://nopmb.wtf:1833/api/lolzteam/' .. v[1]
-
-					http.request('GET', URL, function(success, response)
-						if not success or response.status ~= 200 or not CPLua.CrackTool.state then return end
-						local data = json.parse(response.body)
-						print('LolzChecker: ', response.body)
-						if ( data and data.success ~= nil and data.success == false ) then
-							printDebug('well fuck, we found nothing')
-						elseif ( data ) then
-							local ReplaceData = {}
-							ReplaceData.name = v[2]
-							ReplaceData.id = v[1]
-							ReplaceData.times = #data
-							ReplaceData.price = data[1].Price
-							ReplaceData.marketid = data[1].MarketID
-							ReplaceData.link =  'https://lolz.guru/market/'..ReplaceData.marketid
-
-							local Prices = {}
-							local Links = {}
-							local Currency = ''
-							for index, value in ipairs(data) do
-								Prices[#Prices + 1] = value.Price
-								Links[#Links + 1] = value.MarketID
-								Currency = value.Currency
-							end
-							ReplaceData.min = math.min(unpack(Prices))
-							ReplaceData.max = math.max(unpack(Prices))
-							
-							ReplaceData.links = table.concat(Links, ', ')
-
-							local Default = '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}'
-							if ( ui.get(CPLua.CrackTool.customformatEnable) ) then
-								Default = ui.get(CPLua.CrackTool.customformat)
-							end
-							local Msg = processTags(Default, ReplaceData);
-							for index, value in ipairs(OutputMethods) do
-								CPLua.ChatMethods[value](Msg)
-							end
-						end
-
-						Completed = Completed + 1
-						if ( Completed == #Targets ) then
-							CPLua.CrackTool.state = false
-
-							--CPLua.QueueChatMessages.sendNext()
-
-							ui.set_visible(CPLua.CrackTool.start, true)
-							ui.set_visible(CPLua.CrackTool.stop, false)
-						end
+					client.delay_call(1*(i-1), function()
+						CPLua.CrackTool.CheckCrack(v[1], Targets, i)
 					end)
 				end
 			elseif ( #Targets == 0 ) then
@@ -1206,7 +1211,7 @@ function Initiate()
 			if ( #Targets > 0 ) then
 				local OutputMethods = ui.get(CPLua.FaceITTool.output)
 				for i, v in ipairs(Targets) do
-					local URL = 'http://nopmb.wtf:1833/api/faceit/' .. v[1]
+					local URL = 'https://csmit195.me/api/faceit/' .. v[1]
 
 					http.request('GET', URL, function(success, response)
 						if not success or response.status ~= 200 or not CPLua.FaceITTool.state then return end
