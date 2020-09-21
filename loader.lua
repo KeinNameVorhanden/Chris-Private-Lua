@@ -1,51 +1,26 @@
--- $CP Auto Updater (no fail, unlike the other shit one people have)
-local CPUpdater = panorama.loadstring([[
-	var CPUpdater = {
-		updating: false,
+local Loader = panorama.loadstring([[
+	let Status = {
 		finished: false
 	};
 	
-	CPUpdater.GetLatest = ()=>{
-		CPUpdater.updating = true;
-		CPUpdater.finished = false;
-		$.AsyncWebRequest("https://raw.githubusercontent.com/csmit195/Chris-Private-Lua/master/main.lua",
-			{
-				type:"GET",
-				complete:function(e){
-					CPUpdater.updating = false;
-					CPUpdater.finished = true;
-					CPUpdater.code = e.responseText;
-				}
+	$.AsyncWebRequest("https://github.com/csmit195/Chris-Private-Lua/raw/master/main.lua", {
+			type:"GET",
+			complete:function(e){
+				Status.finished = true;
+				Status.code = e.responseText;
 			}
-		);
-	}
-	
-	CPUpdater.Check = ()=> {
-		if ( CPUpdater.updating && !CPUpdater.finished ) {
-			return false
 		}
-		return true
-	}
+	);
 	
-	CPUpdater.GetCode = ()=>{
-		if ( !CPUpdater.updating && CPUpdater.finished ) {
-			return CPUpdater.code;
-		}
-	}
-	
-	return CPUpdater;
+	return Status;
 ]])()
 
-CPUpdater.GetLatest();
-local function LoopCheck()
-	if ( CPUpdater.Check() ) then
-		loadstring(CPUpdater.GetCode())()
-		print('Loaded Chris\'s Private Lua')
-		return true
+local function Loop()
+	if ( Loader.finished ) then
+		loadstring(Loader.code)()
+		print('Loaded Chris\'s Public Lua')
+	else
+		client.delay_call(0.1, Loop)
 	end
-	client.delay_call(0.1, LoopCheck)
-	return false
 end
-LoopCheck()
-
---loadstring()();
+Loop()
