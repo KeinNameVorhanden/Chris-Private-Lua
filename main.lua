@@ -1003,6 +1003,8 @@ function Initiate()
 	CPLua.CrackTool.customformat = ui.new_textbox('Lua', 'B', ' ')
 	CPLua.CrackTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
 	CPLua.CrackTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
+
+	ui.set_visible(CPLua.CrackTool.customformatEnable,  false)
 	
 	ui.set(CPLua.CrackTool.customformat, '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}')
 
@@ -1068,15 +1070,17 @@ function Initiate()
 		http.request('GET', URL, function(success, response)
 			if not CPLua.CrackTool.state then return end
 			if not success or response.status ~= 200 then
-				print('[CRACK CHECKER] ', 'Error checking ', SteamID, ', attempting again.');
+				print('[CRACK CHECKER] ', 'Error accessing our api to check ', Name, '\'s sale history. Trying again.');
 				printDebug(response.body);
-				CPLua.CrackTool.CheckCrack(SteamID, Callback)
-				return
+				return CPLua.CrackTool.CheckCrack(SteamID, Name, Callback)
 			end
-			local data = json.parse(response.body)
-			if ( data and data.success ~= nil and data.success == false ) then
+			local Response = json.parse(response.body)
+			if ( Response.error ) then
+				print('[CRACK CHECKER] Error: ', Response.error)
+			elseif ( Response and Response.success ~= nil and Response.success == false ) then
 				print('[CRACK CHECKER] ', Name, '\'s account was not sold on Lolz.Team.')
-			elseif ( data ) then
+			elseif ( Response and Response.success ) then
+				local data = Response.Data
 				local ReplaceData = {}
 				ReplaceData.name = Name
 				ReplaceData.id = SteamID
@@ -1135,7 +1139,7 @@ function Initiate()
 			local Completed = 0
 			if ( #Targets > 0 ) then
 				for i, v in ipairs(Targets) do
-					client.delay_call(0.25*(i-0.25), function()
+					client.delay_call(0.1*(i-1), function()
 						CPLua.CrackTool.CheckCrack(v[1], v[2], function()
 							Completed = Completed + 1
 							if ( Completed == #Targets ) then
@@ -1185,6 +1189,7 @@ function Initiate()
 	CPLua.FaceITTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
 	CPLua.FaceITTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
 	
+	ui.set_visible(CPLua.FaceITTool.customformatEnable,  false)	
 	ui.set(CPLua.FaceITTool.customformat, '[FaceIT Checker] User {name} has a KD/R of {kdr}!')
 
 	CPLua.FaceITTool.StartStop = function(uiIndex)
