@@ -1,4 +1,4 @@
 # Chris Un-Privated LUA
-Skeet Lua - My personal helper.
 
 [OG-Creator](https://gamesense.pub/forums/profile.php?id=7083)
+[OG-Script](https://github.com/csmit195/Chris-Private-Lua)
