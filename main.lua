@@ -366,7 +366,7 @@ CSPanorama.setDebugMode(false)
 function Initiate()
 	local CSLua = {loops = {}}
 
-	CSLua.Header = ui.new_label('Lua', 'B', '=========  [   $CS Start   ]  =========')
+	CSLua.Header = ui.new_label('Lua', 'B', '=========  [   CS Start   ]  =========')
 	
 	--#region Delayed Auto Accept
 	CSLua.AutoAccept = {}
@@ -1037,31 +1037,48 @@ function Initiate()
 	end)
 
 	CSLua.ChatMethods = {
-		['Party Chat'] = function(msg)
-			PartyListAPI.SessionCommand('Game::Chat', string.format('run all xuid %s chat %s', CSPanorama.steamID, msg:gsub(' ', ' ')))
+		PartyChat = function(msg)
+			PartyListAPI.SessionCommand('Game::Chat', string.format('run all xuid %s chat %s', CSPanorama.steamID, msg:gsub(' ', ' ')))
 		end,
-		['Game Chat'] = function(msg)
+		GameChat = function(msg)
 			CSLua.QueueChatMessages.msgs[#CSLua.QueueChatMessages.msgs + 1] = {'say', msg}
 			if ( #CSLua.QueueChatMessages.msgs == 1 ) then
 				CSLua.QueueChatMessages.sendNext()
 			end
 		end,
-		['Team Chat'] = function(msg)
+		TeamChat = function(msg)
 			CSLua.QueueChatMessages.msgs[#CSLua.QueueChatMessages.msgs + 1] = {'say_team', msg}
 			if ( #CSLua.QueueChatMessages.msgs == 1 ) then
 				CSLua.QueueChatMessages.sendNext()
 			end
 		end,
-		['Console'] = function(...)
+		Console = function(...)
 			print(...)
 		end
 	}
-	
-	if ( sendChatSuccess ) then
-		CSLua.ChatMethods['Local Chat'] = function(msg)
-			CS_SendChat(msg)
-		end
+
+	ffi.cdef[[
+		typedef void***(__thiscall* FindHudElement_t)(void*, const char*);
+		typedef void(__cdecl* ChatPrintf_t)(void*, int, int, const char*, ...);
+	]]
+
+	local signature_gHud = '\xB9\xCC\xCC\xCC\xCC\x88\x46\x09'
+	local signature_FindElement = '\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x33\xF6\x39\x77\x28'
+	local match = client.find_signature('client_panorama.dll', signature_gHud) or error('sig1 not found') -- returns void***
+	local char_match = ffi.cast('char*', match) + 1
+	local hud = ffi.cast('void**', char_match)[0] or error('hud is nil') -- returns void**
+	match = client.find_signature('client_panorama.dll', signature_FindElement) or error('FindHudElement not found')
+	local find_hud_element = ffi.cast('FindHudElement_t', match)
+	local hudchat = find_hud_element(hud, 'CHudChat') or error('CHudChat not found')
+	local chudchat_vtbl = hudchat[0] or error('CHudChat instance vtable is nil')
+	local raw_print_to_chat = chudchat_vtbl[27] -- void*
+	local print_to_chat = ffi.cast('ChatPrintf_t', raw_print_to_chat)
+
+	local function Send(text)
+		print_to_chat(hudchat, 0, 0, text)
 	end
+
+	CSLua.ChatMethods['LocalChat'] = Send
 
 	ui.set(CSLua.CrackTool.customformat)
 
@@ -1069,16 +1086,17 @@ function Initiate()
 		local URL = 'https://csmit195.me/api/lolzteam/' .. SteamID
 		http.request('GET', URL, function(success, response)
 			if not CSLua.CrackTool.state then return end
+			local chachedStr = ''
 			if not success or response.status ~= 200 then
-				print('[CRACK CHECKER] ', 'Error accessing our api to check ', Name, '\'s sale history. Trying again.');
+				print('[CRACK CHECKER] ', 'Error accessing our api to check ' .. Name .. '\'s sale history. Trying again.');
 				printDebug(response.body);
 				return CSLua.CrackTool.CheckCrack(SteamID, Name, Callback)
 			end
 			local Response = json.parse(response.body)
 			if ( Response.error ) then
-				print('[CRACK CHECKER] Error: ', Response.error)
+				chachedStr = '[CRACK CHECKER] Error: ' .. Response.error
 			elseif ( Response and Response.success ~= nil and Response.success == false ) then
-				print('[CRACK CHECKER] ', Name, '\'s account was not sold on Lolz.Team.')
+				chachedStr = '[CRACK CHECKER] ' .. Name .. '\'s account was not sold on Lolz.Team.'
 			elseif ( Response and Response.success ) then
 				local data = Response.Data
 				local ReplaceData = {}
@@ -1106,10 +1124,11 @@ function Initiate()
 				if ( ui.get(CSLua.CrackTool.customformatEnable) ) then
 					Default = ui.get(CSLua.CrackTool.customformat)
 				end
-				local Msg = processTags(Default, ReplaceData);
-				for index, value in ipairs(ui.get(CSLua.CrackTool.output)) do
-					CSLua.ChatMethods[value](Msg)
-				end
+				chachedStr = processTags(Default, ReplaceData);
+			end
+			for index, value in ipairs(ui.get(CSLua.CrackTool.output)) do
+				value = value:gsub(' ', '')
+				CSLua.ChatMethods[value](chachedStr)
 			end
 			Callback()
 		end)
@@ -1218,11 +1237,12 @@ function Initiate()
 				local OutputMethods = ui.get(CSLua.FaceITTool.output)
 				for i, v in ipairs(Targets) do
 					local URL = 'https://csmit195.me/api/faceit/' .. v[1]
-
+					local chachedStr = ''
 					http.request('GET', URL, function(success, response)
 						if not success or response.status ~= 200 or not CSLua.FaceITTool.state then return end
 						local data = json.parse(response.body)
 						if ( data and data.success ~= nil and data.success == false ) then
+							chachedStr = v[2] .. ' was not found!'
 							printDebug('well fuck, we found nothing')
 						elseif ( data and data.id and data.matches ) then
 							local ReplaceData = {}
@@ -1240,10 +1260,15 @@ function Initiate()
 							if ( ui.get(CSLua.FaceITTool.customformatEnable) ) then
 								Default = ui.get(CSLua.FaceITTool.customformat)
 							end
-							local Msg = processTags(Default, ReplaceData);
-							for index, value in ipairs(OutputMethods) do
-								CSLua.ChatMethods[value](Msg)
-							end
+							chachedStr = processTags(Default, ReplaceData);
+						else
+							chachedStr = v[2] .. ' was not found!'
+							printDebug('well fuck, we found nothing')
+						end
+
+						for index, value in ipairs(OutputMethods) do
+							value = value:gsub(' ', '')
+							CSLua.ChatMethods[value](chachedStr)
 						end
 
 						Completed = Completed + 1
@@ -1312,7 +1337,7 @@ function Initiate()
 	end)
 	--#endregion
 
-	CSLua.Footer = ui.new_label('Lua', 'B', '=========  [   $CS Finish   ]  =========')
+	CSLua.Footer = ui.new_label('Lua', 'B', '=========  [   CS Finish   ]  =========')
 
 	--#region Paint Draw Loops
 	client.set_event_callback('paint', function()
@@ -1522,25 +1547,6 @@ function getRankShortName(LongRankName)
 	end
 	return Rank
 end
-
--- Yoink
-sendChatSuccess, CS_SendChat = pcall(function()
-	local signature = '\x55\x8B\xEC\x83\xEC\x08\x8B\x15\xCC\xCC\xCC\xCC\x0F\x57'
-	local signature_gHud = '\xB9\xCC\xCC\xCC\xCC\x88\x46\x09'
-	local signature_FindElement = '\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x33\xF6\x39\x77\x28'
-	local match = client.find_signature('client.dll', signature) or error('client_find_signature fucked up')
-	local line_goes_through_smoke = ffi.cast('lgts', match) or error('ffi.cast fucked up')
-	local match = client.find_signature('client.dll', signature_gHud) or error('signature not found')
-	local hud = ffi.cast('void**', ffi.cast('char*', match) + 1)[0] or error('hud is nil')
-	local helement_match = client.find_signature('client.dll', signature_FindElement) or error('FindHudElement not found')
-	local hudchat = ffi.cast('FindHudElement_t', helement_match)(hud, 'CHudChat') or error('CHudChat not found')
-	local chudchat_vtbl = hudchat[0] or error('CHudChat instance vtable is nil')
-	local print_to_chat = ffi.cast('ChatPrintf_t', chudchat_vtbl[27])
-
-	return function (text)
-		print_to_chat(hudchat, 0, 0, text)
-	end
-end)
 
 local frametimes = {}
 local fps_prev = 0
