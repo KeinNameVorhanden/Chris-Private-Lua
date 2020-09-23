@@ -7,7 +7,7 @@
   \___| |___/ |_| |_| |_| |_|  \__|  |_|   /_/   |____/  (_)  |_| |_| |_|\___| /_/    
    
    
-    Script Name: Chris's Public Script (CP)
+    Script Name: Chris's Public Script (CS)
     Script Author: csmit195
     Script Version: 1.0
     Script Description: A soon to be public lua for all of man kind.
@@ -29,20 +29,20 @@ local Options = {
 }
 
 --#region Startup Panorama Code
-local CPPanorama = panorama.loadstring([[
+local CSPanorama = panorama.loadstring([[
 	LocalSteamID = MyPersonaAPI.GetXuid();
 
-	if ( typeof cp_print == 'undefined' ) {
-		cp_debugMode = false;
-		cp_print = (args)=>{
-			if ( cp_debugMode ) {
+	if ( typeof CS_print == 'undefined' ) {
+		CS_debugMode = false;
+		CS_print = (args)=>{
+			if ( CS_debugMode ) {
 				$.Msg('[csmit195\'s Lua] ', args);
 			}
 		}
 	}
 
-	if ( typeof cp_SayPartyChat == 'undefined' ) {
-		cp_SayPartyChat = (broadcast, msg)=>{
+	if ( typeof CS_SayPartyChat == 'undefined' ) {
+		CS_SayPartyChat = (broadcast, msg)=>{
 			let Message = msg.split(' ').join('\u{00A0}');
 			let MySteamID = MyPersonaAPI.GetXuid();
 			PartyListAPI.SessionCommand('Game::Chat', `run all xuid ${MySteamID} chat ${Message}`);
@@ -50,42 +50,42 @@ local CPPanorama = panorama.loadstring([[
 		}
 	}
 	
-	if ( typeof cp_DelayAutoAccept == 'undefined' ) {
-		cp_DelayAutoAccept = {};
-		cp_DelayAutoAccept.status = false;
-		cp_DelayAutoAccept.delaySeconds = 15;
+	if ( typeof CS_DelayAutoAccept == 'undefined' ) {
+		CS_DelayAutoAccept = {};
+		CS_DelayAutoAccept.status = false;
+		CS_DelayAutoAccept.delaySeconds = 15;
 		
-		cp_DelayAutoAccept.DelayAcceptFunc = ()=>{
-			$.Schedule(cp_DelayAutoAccept.delaySeconds, function() {
+		CS_DelayAutoAccept.DelayAcceptFunc = ()=>{
+			$.Schedule(CS_DelayAutoAccept.delaySeconds, function() {
 				LobbyAPI.SetLocalPlayerReady('accept');
 			});
 		};
 	}
 
-	if ( typeof cp_AutoAcceptDetection == 'undefined' ) {
-		cp_AutoAcceptDetection = {};
-		cp_AutoAcceptDetection.status = false;
-		cp_AutoAcceptDetection.last = 0;
+	if ( typeof CS_AutoAcceptDetection == 'undefined' ) {
+		CS_AutoAcceptDetection = {};
+		CS_AutoAcceptDetection.status = false;
+		CS_AutoAcceptDetection.last = 0;
 		
-		cp_AutoAcceptDetection.EventFunc = (shouldShow, playersReadyCount, numTotalClientsInReservation)=>{
-			let PossibleAutoAccepts = playersReadyCount - cp_AutoAcceptDetection.last;
-			cp_AutoAcceptDetection.last = playersReadyCount;
+		CS_AutoAcceptDetection.EventFunc = (shouldShow, playersReadyCount, numTotalClientsInReservation)=>{
+			let PossibleAutoAccepts = playersReadyCount - CS_AutoAcceptDetection.last;
+			CS_AutoAcceptDetection.last = playersReadyCount;
 			if ( PossibleAutoAccepts > 2 ) {
-				cp_print(`[$CP Detection Module] Possible ${PossibleAutoAccepts} Auto Accepts`);
+				CS_print(`[$CS Detection Module] Possible ${PossibleAutoAccepts} Auto Accepts`);
 			}
 		};
 	}
 	
-	if ( typeof cp_AutoCSGOStats == 'undefined' ) {
-		cp_AutoCSGOStats = {};
-		cp_AutoCSGOStats.QueueConnectToServer = ()=>{
-			cp_print('Opening CSGOStats.gg in user browser');
+	if ( typeof CS_AutoCSGOStats == 'undefined' ) {
+		CS_AutoCSGOStats = {};
+		CS_AutoCSGOStats.QueueConnectToServer = ()=>{
+			CS_print('Opening CSGOStats.gg in user browser');
 			
 			SteamOverlayAPI.OpenExternalBrowserURL(`https://csgostats.gg/player/${LocalSteamID}#/live`);
 		};
 	}
 	
-	if ( typeof cp_LongPollSubscribe == 'undefined' ) {
+	if ( typeof CS_LongPollSubscribe == 'undefined' ) {
 		let subscribe = function(url, cb) {
 			$.AsyncWebRequest(url,
 				{
@@ -107,69 +107,69 @@ local CPPanorama = panorama.loadstring([[
 			$.Msg("Data:", data, typeof data);
 		});*/
 
-		cp_LongPollSubscribe = {};
+		CS_LongPollSubscribe = {};
 	}
 
 	return {
-		cp_DelayAutoAccept: {
+		CS_DelayAutoAccept: {
 			toggle: (status)=>{
 				if ( status ) {
-					cp_DelayAutoAccept.handle = $.RegisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_DelayAutoAccept.DelayAcceptFunc);
-					cp_print('Registered for DelayAutoAccept');
+					CS_DelayAutoAccept.handle = $.RegisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', CS_DelayAutoAccept.DelayAcceptFunc);
+					CS_print('Registered for DelayAutoAccept');
 				} else {
-					if ( cp_DelayAutoAccept.handle ) {
-						$.UnregisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_DelayAutoAccept.handle);
-						cp_print('Unregistered for DelayAutoAccept');
+					if ( CS_DelayAutoAccept.handle ) {
+						$.UnregisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', CS_DelayAutoAccept.handle);
+						CS_print('Unregistered for DelayAutoAccept');
 					}
 				}
 			},
 			updateDelay: (delay)=>{
-				cp_DelayAutoAccept.delaySeconds = delay;
-				cp_print('Updated delay to: ' + delay);
+				CS_DelayAutoAccept.delaySeconds = delay;
+				CS_print('Updated delay to: ' + delay);
 			}
 		},
-		cp_AutoAcceptDetection: {
+		CS_AutoAcceptDetection: {
 			toggle: (status)=>{
-				if ( status && !cp_AutoAcceptDetection.handle ) {
-					cp_AutoAcceptDetection.handle = $.RegisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_AutoAcceptDetection.EventFunc);
-					cp_print('Registered for cp_AutoAcceptDetection');
+				if ( status && !CS_AutoAcceptDetection.handle ) {
+					CS_AutoAcceptDetection.handle = $.RegisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', CS_AutoAcceptDetection.EventFunc);
+					CS_print('Registered for CS_AutoAcceptDetection');
 				} else {
-					if ( cp_AutoAcceptDetection.handle ) {
-						$.UnregisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', cp_AutoAcceptDetection.handle);
-						cp_AutoAcceptDetection.handle = false;
-						cp_print('Unregistered for cp_AutoAcceptDetection');
+					if ( CS_AutoAcceptDetection.handle ) {
+						$.UnregisterForUnhandledEvent( 'PanoramaComponent_Lobby_ReadyUpForMatch', CS_AutoAcceptDetection.handle);
+						CS_AutoAcceptDetection.handle = false;
+						CS_print('Unregistered for CS_AutoAcceptDetection');
 					}
 				}
 			}
 		},
-		cp_AutoCSGOStats: {
+		CS_AutoCSGOStats: {
 			toggle: (status)=>{
-				if ( status && !cp_AutoCSGOStats.handle ) {
-					cp_AutoCSGOStats.handle = $.RegisterForUnhandledEvent( 'QueueConnectToServer', cp_AutoCSGOStats.QueueConnectToServer);
-					cp_print('Registered for AutoCSGOStats');
+				if ( status && !CS_AutoCSGOStats.handle ) {
+					CS_AutoCSGOStats.handle = $.RegisterForUnhandledEvent( 'QueueConnectToServer', CS_AutoCSGOStats.QueueConnectToServer);
+					CS_print('Registered for AutoCSGOStats');
 				} else {
-					if ( cp_AutoCSGOStats.handle ) {
-						$.UnregisterForUnhandledEvent( 'QueueConnectToServer', cp_AutoCSGOStats.handle);
-						cp_AutoCSGOStats.handle = false;
-						cp_print('Unregistered for AutoCSGOStats');
+					if ( CS_AutoCSGOStats.handle ) {
+						$.UnregisterForUnhandledEvent( 'QueueConnectToServer', CS_AutoCSGOStats.handle);
+						CS_AutoCSGOStats.handle = false;
+						CS_print('Unregistered for AutoCSGOStats');
 					}
 				}
 			}
 		},
-		cp_Localize: (...args)=>{
+		CS_Localize: (...args)=>{
 			return $.Localize.apply(null, args);
 		},
-		cp_PlaySound: (sound, type)=>{
+		CS_PlaySound: (sound, type)=>{
 			$.DispatchEvent( 'PlaySoundEffect', sound, type);
 		},
 		setDebugMode: (state)=>{
-			cp_debugMode = state;
+			CS_debugMode = state;
 		},
 		steamID: LocalSteamID
 	}
 ]])();
 
-CPPanoramaMainMenu = panorama.loadstring([[
+CSPanoramaMainMenu = panorama.loadstring([[
 	// Lobby Chat Utils
 	let Prefix = '!';
 
@@ -308,8 +308,8 @@ CPPanoramaMainMenu = panorama.loadstring([[
 			chat_lines.Children().forEach(el => {
 				let child = el.GetChild(0)
 				if ( child && child.BHasClass('left-right-flow') && child.BHasClass('horizontal-align-left') ) {
-					if ( child.BHasClass('cp_processed') ) return false;
-					child.AddClass('cp_processed');
+					if ( child.BHasClass('CS_processed') ) return false;
+					child.AddClass('CS_processed');
 				}
 			})
 		}
@@ -324,7 +324,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 					chat_lines.Children().forEach(el => {
 						let child = el.GetChild(0)
 						if ( child && child.BHasClass('left-right-flow') && child.BHasClass('horizontal-align-left') ) {
-							if ( child.BHasClass('cp_processed') ) return false;
+							if ( child.BHasClass('CS_processed') ) return false;
 
 							let InnerChild = child.GetChild(child.GetChildCount()-1);
 							if ( InnerChild && InnerChild.text ) {
@@ -347,7 +347,7 @@ CPPanoramaMainMenu = panorama.loadstring([[
 								}
 							}
 							
-							child.AddClass('cp_processed');
+							child.AddClass('CS_processed');
 						}
 					})
 				}
@@ -361,56 +361,56 @@ local Date = panorama.loadstring('return ts => new Date(ts * 1000)')()
 --#endregion
 
 -- Reset debug mode incase restart of script
-CPPanorama.setDebugMode(false)
+CSPanorama.setDebugMode(false)
 
 function Initiate()
-	local CPLua = {loops = {}}
+	local CSLua = {loops = {}}
 
-	CPLua.Header = ui.new_label('Lua', 'B', '=========  [   $CP Start   ]  =========')
+	CSLua.Header = ui.new_label('Lua', 'B', '=========  [   $CS Start   ]  =========')
 	
 	--#region Delayed Auto Accept
-	CPLua.AutoAccept = {}
-	CPLua.AutoAccept.originalAutoAccept = ui.reference('MISC', 'Miscellaneous', 'Auto-accept matchmaking')
-	CPLua.AutoAccept.enable = ui.new_checkbox('Lua', 'B', 'Delayed Auto Accept')
-	CPLua.AutoAccept.delay = ui.new_slider('Lua', 'B', 'Auto Accept Delay', 1, 21, 3, true, 's')
+	CSLua.AutoAccept = {}
+	CSLua.AutoAccept.originalAutoAccept = ui.reference('MISC', 'Miscellaneous', 'Auto-accept matchmaking')
+	CSLua.AutoAccept.enable = ui.new_checkbox('Lua', 'B', 'Delayed Auto Accept')
+	CSLua.AutoAccept.delay = ui.new_slider('Lua', 'B', 'Auto Accept Delay', 1, 21, 3, true, 's')
 
-	ui.set_visible(CPLua.AutoAccept.delay, false)
-	CPPanorama.cp_DelayAutoAccept.toggle(false);
+	ui.set_visible(CSLua.AutoAccept.delay, false)
+	CSPanorama.CS_DelayAutoAccept.toggle(false);
 
-	ui.set_callback(CPLua.AutoAccept.enable, function(self)
+	ui.set_callback(CSLua.AutoAccept.enable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.AutoAccept.delay, Status)
-		CPPanorama.cp_DelayAutoAccept.toggle(Status)
+		ui.set_visible(CSLua.AutoAccept.delay, Status)
+		CSPanorama.CS_DelayAutoAccept.toggle(Status)
 		
 		if ( Status ) then
-			ui.set(CPLua.AutoAccept.originalAutoAccept, not Status)
+			ui.set(CSLua.AutoAccept.originalAutoAccept, not Status)
 		end
 	end)
-	ui.set_callback(CPLua.AutoAccept.delay, function(self)
-		CPPanorama.cp_DelayAutoAccept.updateDelay(ui.get(self))
+	ui.set_callback(CSLua.AutoAccept.delay, function(self)
+		CSPanorama.CS_DelayAutoAccept.updateDelay(ui.get(self))
 	end)
-	ui.set_callback(CPLua.AutoAccept.originalAutoAccept, function(self)
+	ui.set_callback(CSLua.AutoAccept.originalAutoAccept, function(self)
 		if ( ui.get(self) ) then
-			ui.set(CPLua.AutoAccept.enable, false)
+			ui.set(CSLua.AutoAccept.enable, false)
 		end
 	end)
 	--#endregion
 
 	--#region Auto Derank Score
-	CPLua.DerankScore = {}
-	CPLua.DerankScore.enable = ui.new_checkbox('Lua', 'B', 'Auto Derank Score')
-	CPLua.DerankScore.method = ui.new_multiselect('Lua', 'B', 'Method', {'Round Prestart', 'Round Start', 'During Timeout', 'Round End'})
+	CSLua.DerankScore = {}
+	CSLua.DerankScore.enable = ui.new_checkbox('Lua', 'B', 'Auto Derank Score')
+	CSLua.DerankScore.method = ui.new_multiselect('Lua', 'B', 'Method', {'Round Prestart', 'Round Start', 'During Timeout', 'Round End'})
 
-	ui.set_visible(CPLua.DerankScore.method, false)
+	ui.set_visible(CSLua.DerankScore.method, false)
 
-	ui.set_callback(CPLua.DerankScore.enable, function(self)
+	ui.set_callback(CSLua.DerankScore.enable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.DerankScore.method, Status)
+		ui.set_visible(CSLua.DerankScore.method, Status)
 	end)
 
-	function CPLua.DerankScore.MethodState(Method)
+	function CSLua.DerankScore.MethodState(Method)
 		local Found = false
-		for index, value in ipairs(ui.get(CPLua.DerankScore.method)) do
+		for index, value in ipairs(ui.get(CSLua.DerankScore.method)) do
 			if ( value == Method ) then
 				Found = true
 				break
@@ -419,7 +419,7 @@ function Initiate()
 		return Found
 	end
 
-	function CPLua.DerankScore.Reconnect()
+	function CSLua.DerankScore.Reconnect()
 		if CompetitiveMatchAPI.HasOngoingMatch() then
 			printDebug('reconnecting')
 			return CompetitiveMatchAPI.ActionReconnectToOngoingMatch( '', '', '', '' ), derankcheck
@@ -427,36 +427,36 @@ function Initiate()
 	end
 
 	client.set_event_callback("round_start", function()
-		if ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('Round Prestart') then
+		if ui.get(CSLua.DerankScore.enable) and CSLua.DerankScore.MethodState('Round Prestart') then
 			client.delay_call(0, client.exec, "disconnect")
 			client.delay_call(0.5, function()
-				CPLua.DerankScore.Reconnect()
+				CSLua.DerankScore.Reconnect()
 			end)
 		end
 	end)
 
 	client.set_event_callback("round_end", function()
-		if ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('Round End') then
+		if ui.get(CSLua.DerankScore.enable) and CSLua.DerankScore.MethodState('Round End') then
 			client.delay_call(0, client.exec, "disconnect")
 			client.delay_call(0.5, function()
-				CPLua.DerankScore.Reconnect()
+				CSLua.DerankScore.Reconnect()
 			end)
 		end
 	end)
  
 	client.set_event_callback("round_freeze_end", function()
-		if ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('Round Start') then
+		if ui.get(CSLua.DerankScore.enable) and CSLua.DerankScore.MethodState('Round Start') then
 			printDebug('Trying the disconnect')
 			client.delay_call(0, client.exec, "disconnect")
 			client.delay_call(0.5, function()
-				CPLua.DerankScore.Reconnect()
+				CSLua.DerankScore.Reconnect()
 			end)
 		end
 	end)
 
-	CPLua.DerankScore.Deranking = false
-	CPLua.loops[#CPLua.loops + 1] = function()
-		if not CPLua.DerankScore.Deranking and ui.get(CPLua.DerankScore.enable) and CPLua.DerankScore.MethodState('During Timeout') and FriendsListAPI.IsGamePaused() and entity.is_alive(entity.get_local_player()) then
+	CSLua.DerankScore.Deranking = false
+	CSLua.loops[#CSLua.loops + 1] = function()
+		if not CSLua.DerankScore.Deranking and ui.get(CSLua.DerankScore.enable) and CSLua.DerankScore.MethodState('During Timeout') and FriendsListAPI.IsGamePaused() and entity.is_alive(entity.get_local_player()) then
 			local Team = (entity.get_prop(entity.get_game_rules(), "m_bCTTimeOutActive") == 1 and 'CT' or false) or (entity.get_prop(entity.get_game_rules(), "m_bTerroristTimeOutActive") == 1 and 'T' or false)
 			local TimeoutRemaining = 0
 			if ( Team == 'CT' ) then
@@ -466,10 +466,10 @@ function Initiate()
 			end
 
 			if ( TimeoutRemaining > 0) then
-				CPLua.DerankScore.Deranking = true
+				CSLua.DerankScore.Deranking = true
 				client.delay_call(0, client.exec, "disconnect")
 				client.delay_call(0.5, function()
-					CPLua.DerankScore.Reconnect()
+					CSLua.DerankScore.Reconnect()
 				end)
 			end
 		end
@@ -477,32 +477,32 @@ function Initiate()
 	client.set_event_callback('player_connect_full', function(e)
 		printDebug('someone connected')
 		if ( entity.get_local_player() == client.userid_to_entindex(e.userid) ) then
-			CPLua.DerankScore.Deranking = false
+			CSLua.DerankScore.Deranking = false
 			printDebug('derank false')
 		end
 	end)
 	--#endregion
 
 	--#region Auto Open CsgoStats.gg
-	CPLua.AutoCSGOStats = {}
-	CPLua.AutoCSGOStats.enable = ui.new_checkbox('Lua', 'B', 'Auto CSGOStats.gg')
+	CSLua.AutoCSGOStats = {}
+	CSLua.AutoCSGOStats.enable = ui.new_checkbox('Lua', 'B', 'Auto CSGOStats.gg')
 
-	CPPanorama.cp_AutoCSGOStats.toggle(false);
+	CSPanorama.CS_AutoCSGOStats.toggle(false);
 
-	ui.set_callback(CPLua.AutoCSGOStats.enable, function(self)
+	ui.set_callback(CSLua.AutoCSGOStats.enable, function(self)
 		local Status = ui.get(self)
-		CPPanorama.cp_AutoCSGOStats.toggle(Status)
+		CSPanorama.CS_AutoCSGOStats.toggle(Status)
 	end)
 	--#endregion
 
 	--#region Match Start Beep
-	CPLua.MatchStartBeep = {}
-	CPLua.MatchStartBeep.enable = ui.new_checkbox('Lua', 'B', 'Match Start Beep')
-	CPLua.MatchStartBeep.repeatTimes = ui.new_slider('Lua', 'B', 'Times (x)', 1, 30, 1)
-	CPLua.MatchStartBeep.repeatInterval = ui.new_slider('Lua', 'B', 'Interval (ms)', 0, 1000, 250, true, 'ms')
-	CPLua.MatchStartBeep.delay = ui.new_slider('Lua', 'B', '% of Match Freezetime', 0, 100, 75, true, '%')
+	CSLua.MatchStartBeep = {}
+	CSLua.MatchStartBeep.enable = ui.new_checkbox('Lua', 'B', 'Match Start Beep')
+	CSLua.MatchStartBeep.repeatTimes = ui.new_slider('Lua', 'B', 'Times (x)', 1, 30, 1)
+	CSLua.MatchStartBeep.repeatInterval = ui.new_slider('Lua', 'B', 'Interval (ms)', 0, 1000, 250, true, 'ms')
+	CSLua.MatchStartBeep.delay = ui.new_slider('Lua', 'B', '% of Match Freezetime', 0, 100, 75, true, '%')
 
-	CPLua.MatchStartBeep.sounds = {
+	CSLua.MatchStartBeep.sounds = {
 		{'popup_accept_match_beep', 'Default (Beep)'},
 		{'UIPanorama.generic_button_press', 'Generic Button'},
 		{'mainmenu_press_home', 'Home Button'},
@@ -560,88 +560,88 @@ function Initiate()
 	}
 	local ProcessedSounds = {}
 	local ReferenceSounds = {}
-	for index, Sound in pairs(CPLua.MatchStartBeep.sounds) do
+	for index, Sound in pairs(CSLua.MatchStartBeep.sounds) do
 		ProcessedSounds[#ProcessedSounds + 1] = Sound[2]
 		ReferenceSounds[Sound[2]] = Sound[1]
 	end	
-	CPLua.MatchStartBeep.sounds = ui.new_listbox('Lua', 'B', 'Sounds', ProcessedSounds)
-	CPLua.MatchStartBeep.testsound = ui.new_button('Lua', 'B', 'Test Sound', function()
-		local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1]
+	CSLua.MatchStartBeep.sounds = ui.new_listbox('Lua', 'B', 'Sounds', ProcessedSounds)
+	CSLua.MatchStartBeep.testsound = ui.new_button('Lua', 'B', 'Test Sound', function()
+		local SelectedSound = ProcessedSounds[ui.get(CSLua.MatchStartBeep.sounds)+1]
 		printDebug(SelectedSound, '>', ReferenceSounds[SelectedSound])
 		if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
-			CPLua.MatchStartBeep.PlaySound()
+			CSLua.MatchStartBeep.PlaySound()
 		end
 	end)
 
-	ui.set_visible(CPLua.MatchStartBeep.delay, false)
-	ui.set_visible(CPLua.MatchStartBeep.sounds, false)
-	ui.set_visible(CPLua.MatchStartBeep.testsound, false)
+	ui.set_visible(CSLua.MatchStartBeep.delay, false)
+	ui.set_visible(CSLua.MatchStartBeep.sounds, false)
+	ui.set_visible(CSLua.MatchStartBeep.testsound, false)
 
-	ui.set_visible(CPLua.MatchStartBeep.repeatTimes, false)
-	ui.set_visible(CPLua.MatchStartBeep.repeatInterval, false)
+	ui.set_visible(CSLua.MatchStartBeep.repeatTimes, false)
+	ui.set_visible(CSLua.MatchStartBeep.repeatInterval, false)
 
-	ui.set_callback(CPLua.MatchStartBeep.enable, function(self)
+	ui.set_callback(CSLua.MatchStartBeep.enable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.MatchStartBeep.delay, Status)
-		ui.set_visible(CPLua.MatchStartBeep.sounds, Status)
-		ui.set_visible(CPLua.MatchStartBeep.testsound, Status)
+		ui.set_visible(CSLua.MatchStartBeep.delay, Status)
+		ui.set_visible(CSLua.MatchStartBeep.sounds, Status)
+		ui.set_visible(CSLua.MatchStartBeep.testsound, Status)
 
-		ui.set_visible(CPLua.MatchStartBeep.repeatTimes, Status)
-		ui.set_visible(CPLua.MatchStartBeep.repeatInterval, ui.get(CPLua.MatchStartBeep.repeatTimes) ~= 1 and Status)
+		ui.set_visible(CSLua.MatchStartBeep.repeatTimes, Status)
+		ui.set_visible(CSLua.MatchStartBeep.repeatInterval, ui.get(CSLua.MatchStartBeep.repeatTimes) ~= 1 and Status)
 	end)
 
-	CPLua.MatchStartBeep.PlaySound = function()
-		local SelectedSound = ProcessedSounds[ui.get(CPLua.MatchStartBeep.sounds)+1] or 'Default (Beep)'
+	CSLua.MatchStartBeep.PlaySound = function()
+		local SelectedSound = ProcessedSounds[ui.get(CSLua.MatchStartBeep.sounds)+1] or 'Default (Beep)'
 		if ( SelectedSound and SelectedSound ~= '' and ReferenceSounds[SelectedSound] ) then
-			local Times = ui.get(CPLua.MatchStartBeep.repeatTimes)
-			local Interval = ui.get(CPLua.MatchStartBeep.repeatInterval)
+			local Times = ui.get(CSLua.MatchStartBeep.repeatTimes)
+			local Interval = ui.get(CSLua.MatchStartBeep.repeatInterval)
 			if ( Times == 1 ) then
-				CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+				CSPanorama.CS_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
 			else
 				for i=1, Times do
 					client.delay_call(Times == 1 and 0 or ( ( i - 1 ) * Interval ) / 1000, function()
 						printDebug('done')
-						CPPanorama.cp_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
+						CSPanorama.CS_PlaySound(ReferenceSounds[SelectedSound], 'MOUSE')
 					end)
 				end
 			end
 		end
 	end
 
-	ui.set_callback(CPLua.MatchStartBeep.repeatTimes, function(self)
+	ui.set_callback(CSLua.MatchStartBeep.repeatTimes, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.MatchStartBeep.repeatInterval, Status ~= 1)
+		ui.set_visible(CSLua.MatchStartBeep.repeatInterval, Status ~= 1)
 	end)
 	
 
 	client.set_event_callback('round_start', function()
-		if ( ui.get(CPLua.MatchStartBeep.enable) ) then
+		if ( ui.get(CSLua.MatchStartBeep.enable) ) then
 			local mp_freezetime = cvar.mp_freezetime:get_int()
-			local percent = ui.get(CPLua.MatchStartBeep.delay) / 100
+			local percent = ui.get(CSLua.MatchStartBeep.delay) / 100
 			client.delay_call(mp_freezetime * percent, function()
-				CPLua.MatchStartBeep.PlaySound()
+				CSLua.MatchStartBeep.PlaySound()
 			end)
 		end
 	end)
 	--#endregion
 
 	--#region Custom Clantag Builder
-	CPLua.Clantag = {}
-	CPLua.Clantag.last = ''
-	CPLua.Clantag.enable = ui.new_checkbox('Lua', 'B', 'Clantag Builder [BETA]')
-	CPLua.Clantag.template = ui.new_textbox('Lua', 'B', ' ')
-	CPLua.Clantag.helper = ui.new_label('Lua', 'B', 'Helper: type { to get suggestions')
+	CSLua.Clantag = {}
+	CSLua.Clantag.last = ''
+	CSLua.Clantag.enable = ui.new_checkbox('Lua', 'B', 'Clantag Builder [BETA]')
+	CSLua.Clantag.template = ui.new_textbox('Lua', 'B', ' ')
+	CSLua.Clantag.helper = ui.new_label('Lua', 'B', 'Helper: type { to get suggestions')
 
-	CPLua.Clantag.processedData = {}
+	CSLua.Clantag.processedData = {}
 
-	CPLua.Clantag.data = {
+	CSLua.Clantag.data = {
 		{'rank', 'competitive ranking', 300, function()
 			local currentRank = entity.get_prop(entity.get_player_resource(), 'm_iCompetitiveRanking', entity.get_local_player())
 			if ( currentRank == 0 ) then return 'N/A' end
 
 			if ( currentRank ) then
 				local CurrentMode = GameStateAPI.GetGameModeInternalName(true)
-				local RankLong = CPPanorama.cp_Localize(CurrentMode == 'survival' and '#skillgroup_'..currentRank..'dangerzone' or 'RankName_' .. currentRank)
+				local RankLong = CSPanorama.CS_Localize(CurrentMode == 'survival' and '#skillgroup_'..currentRank..'dangerzone' or 'RankName_' .. currentRank)
 				local RankName = getRankShortName(RankLong)
 
 				return RankName
@@ -670,14 +670,14 @@ function Initiate()
 		end, 0},
 		{'headchance', 'current headshot chance',  1, function()
 			local LocalPlayer = entity.get_local_player()
-			local TotalKills = CPLua.Clantag.processedData.kills
+			local TotalKills = CSLua.Clantag.processedData.kills
 			local HeadshotKills = entity.get_prop(entity.get_player_resource(), 'm_iMatchStats_HeadShotKills_Total', entity.get_local_player())
 			if ( TotalKills and HeadshotKills ) then				
 				return math.ceil( (HeadshotKills / TotalKills) * 100 )
 			end
 		end, 0},
 		{'c4', 'displays BOMB if carrying bomb', 1, function()
-			CPLua.Clantag.last = '' -- TEMP
+			CSLua.Clantag.last = '' -- TEMP
 			-- Print C4 if has c4
 		end, 0},
 		{'wep', 'current weapon name', 0.25, function()
@@ -706,10 +706,10 @@ function Initiate()
 			return Ammo
 		end, 0},
 		{'id', 'current steam id', 9999, function()
-			return CPPanorama.steamID
+			return CSPanorama.steamID
 		end, 0},
 		{'bomb', 'bomb timer countdown', 1, function()
-			local c4 = entity.get_all("CPlantedC4")[1]
+			local c4 = entity.get_all("CSlantedC4")[1]
 			if c4 == nil or entity.get_prop(c4, "m_bBombDefused") == 1 or entity.get_local_player() == nil then return '' end
 			local c4_time = entity.get_prop(c4, "m_flC4Blow") - globals.curtime()
    			return c4_time ~= nil and c4_time > 0 and math.floor(c4_time) or ''
@@ -791,59 +791,59 @@ function Initiate()
 		end, 0}
 	}
 	
-	ui.set_visible(CPLua.Clantag.template, false)
-	ui.set_visible(CPLua.Clantag.helper, false)
+	ui.set_visible(CSLua.Clantag.template, false)
+	ui.set_visible(CSLua.Clantag.helper, false)
 
-	ui.set_callback(CPLua.Clantag.enable, function(self)
+	ui.set_callback(CSLua.Clantag.enable, function(self)
 		local Status = ui.get(self)
 		if ( not Status ) then
 			client.set_clan_tag('')
 		end
-		CPLua.Clantag.last = ''
-		ui.set_visible(CPLua.Clantag.template, Status)
-		ui.set_visible(CPLua.Clantag.helper, Status)
+		CSLua.Clantag.last = ''
+		ui.set_visible(CSLua.Clantag.template, Status)
+		ui.set_visible(CSLua.Clantag.helper, Status)
 	end)
 
 	-- Helper Code
-	local LastTemplateText = ui.get(CPLua.Clantag.template)
+	local LastTemplateText = ui.get(CSLua.Clantag.template)
 	client.set_event_callback('post_render', function()
-		local TemplateText = ui.get(CPLua.Clantag.template)
+		local TemplateText = ui.get(CSLua.Clantag.template)
 		if ( TemplateText ~= LastTemplateText ) then
 			LastTemplateText = TemplateText
 			local Match = TemplateText:match('{(%a*%d*)$')
 			if ( Match ) then
 				local FoundMatch = false
 				if ( Match:len() > 0 ) then
-					for i, v in ipairs(CPLua.Clantag.data) do
+					for i, v in ipairs(CSLua.Clantag.data) do
 						if ( v[1]:sub(1, Match:len()) == Match:lower() ) then
 							FoundMatch = v
 							break;
 						end
 					end
 					if ( FoundMatch ) then
-						ui.set(CPLua.Clantag.helper, '{' .. FoundMatch[1] .. '} - ' .. FoundMatch[2])
+						ui.set(CSLua.Clantag.helper, '{' .. FoundMatch[1] .. '} - ' .. FoundMatch[2])
 					else
-						ui.set(CPLua.Clantag.helper, 'no matches found for {' .. Match .. '}' )
+						ui.set(CSLua.Clantag.helper, 'no matches found for {' .. Match .. '}' )
 					end
 				else
 					local cmds = {}
-					for i, v in ipairs(CPLua.Clantag.data) do
+					for i, v in ipairs(CSLua.Clantag.data) do
 						cmds[#cmds + 1] = v[1]
 					end
-					ui.set(CPLua.Clantag.helper, table.concat(cmds, ', ') )
+					ui.set(CSLua.Clantag.helper, table.concat(cmds, ', ') )
 				end
 			else
-				ui.set(CPLua.Clantag.helper, 'Helper: type { to get suggestions' )
+				ui.set(CSLua.Clantag.helper, 'Helper: type { to get suggestions' )
 			end
 		end
 	end)
 
-	CPLua.loops[#CPLua.loops + 1] = function()
-		if ( not ui.get(CPLua.Clantag.enable) ) then return end
+	CSLua.loops[#CSLua.loops + 1] = function()
+		if ( not ui.get(CSLua.Clantag.enable) ) then return end
 		if ( not entity.get_local_player() ) then return end
 
 		-- DATA CALCULATIONS
-		for index, value in ipairs(CPLua.Clantag.data) do
+		for index, value in ipairs(CSLua.Clantag.data) do
 			local tag = value[1]
 			local desc = value[2]
 			local delay = value[3]
@@ -852,52 +852,52 @@ function Initiate()
 			if ( globals.curtime() > value[5] ) then
 				local Output = callfunc()
 				if ( Output == nil ) then
-					CPLua.Clantag.processedData[tag] = ''
+					CSLua.Clantag.processedData[tag] = ''
 				elseif ( Output ) then
-					CPLua.Clantag.processedData[tag] = Output
+					CSLua.Clantag.processedData[tag] = Output
 				end
 				value[5] = globals.curtime() + delay
 			end
 		end
 		
-		local newClantag = processTags(ui.get(CPLua.Clantag.template), CPLua.Clantag.processedData)
-		if ( CPLua.Clantag.last ~= newClantag ) then
+		local newClantag = processTags(ui.get(CSLua.Clantag.template), CSLua.Clantag.processedData)
+		if ( CSLua.Clantag.last ~= newClantag ) then
 			client.set_clan_tag(newClantag)
-			CPLua.Clantag.last = newClantag
+			CSLua.Clantag.last = newClantag
 		end
 	end
 
 	client.set_event_callback('player_connect_full', function()
-		CPLua.Clantag.last = ''
-		for index, value in ipairs(CPLua.Clantag.data) do
+		CSLua.Clantag.last = ''
+		for index, value in ipairs(CSLua.Clantag.data) do
 			value[5] = 0
 		end
 	end)
 	client.set_event_callback('round_start', function()
-		CPLua.Clantag.last = ''
+		CSLua.Clantag.last = ''
 	end)
 	--#endregion
 
 	--#region Custom Killsay Builder
-	CPLua.CustomKillSay = {}
-	CPLua.CustomKillSay.enable = ui.new_checkbox('Lua', 'B', 'Killsay Builder [BETA]')
-	ui.set_visible(CPLua.CustomKillSay.enable, false)
-	CPLua.CustomKillSay.template = ui.new_textbox('Lua', 'B', ' ')
-	CPLua.CustomKillSay.helper = ui.new_label('Lua', 'B', 'Helper: type { to get suggestions')
+	CSLua.CustomKillSay = {}
+	CSLua.CustomKillSay.enable = ui.new_checkbox('Lua', 'B', 'Killsay Builder [BETA]')
+	ui.set_visible(CSLua.CustomKillSay.enable, false)
+	CSLua.CustomKillSay.template = ui.new_textbox('Lua', 'B', ' ')
+	CSLua.CustomKillSay.helper = ui.new_label('Lua', 'B', 'Helper: type { to get suggestions')
 
-	CPLua.CustomKillSay.processedData = {}
+	CSLua.CustomKillSay.processedData = {}
 
 	
-	ui.set_visible(CPLua.CustomKillSay.template, false)
-	ui.set_visible(CPLua.CustomKillSay.helper, false)
+	ui.set_visible(CSLua.CustomKillSay.template, false)
+	ui.set_visible(CSLua.CustomKillSay.helper, false)
 
-	ui.set_callback(CPLua.CustomKillSay.enable, function(self)
+	ui.set_callback(CSLua.CustomKillSay.enable, function(self)
 		local Status = ui.get(self)
 		if ( not Status ) then
 			client.set_clan_tag('')
 		end
-		ui.set_visible(CPLua.CustomKillSay.template, Status)
-		ui.set_visible(CPLua.CustomKillSay.helper, Status)
+		ui.set_visible(CSLua.CustomKillSay.template, Status)
+		ui.set_visible(CSLua.CustomKillSay.helper, Status)
 	end)
 
 	-- Helper Code
@@ -907,47 +907,47 @@ function Initiate()
 		end},
 	}
 
-	local LastKillsayText = ui.get(CPLua.CustomKillSay.template)
+	local LastKillsayText = ui.get(CSLua.CustomKillSay.template)
 	client.set_event_callback('post_render', function()
-		local TemplateText = ui.get(CPLua.CustomKillSay.template)
+		local TemplateText = ui.get(CSLua.CustomKillSay.template)
 		if ( TemplateText ~= LastKillsayText ) then
 			LastKillsayText = TemplateText
 			local Match = TemplateText:match('{(%a*%d*)$')
 			if ( Match ) then
 				local FoundMatch = false
 				if ( Match:len() > 0 ) then
-					for i, v in ipairs(CPLua.CustomKillSay.data) do
+					for i, v in ipairs(CSLua.CustomKillSay.data) do
 						if ( v[1]:sub(1, Match:len()) == Match:lower() ) then
 							FoundMatch = v
 							break;
 						end
 					end
 					if ( FoundMatch ) then
-						ui.set(CPLua.CustomKillSay.helper, '{' .. FoundMatch[1] .. '} - ' .. FoundMatch[2])
+						ui.set(CSLua.CustomKillSay.helper, '{' .. FoundMatch[1] .. '} - ' .. FoundMatch[2])
 					else
-						ui.set(CPLua.CustomKillSay.helper, 'no matches found for {' .. Match .. '}' )
+						ui.set(CSLua.CustomKillSay.helper, 'no matches found for {' .. Match .. '}' )
 					end
 				else
 					local cmds = {}
-					for i, v in ipairs(CPLua.CustomKillSay.data) do
+					for i, v in ipairs(CSLua.CustomKillSay.data) do
 						cmds[#cmds + 1] = v[1]
 					end
-					ui.set(CPLua.CustomKillSay.helper, table.concat(cmds, ', ') )
+					ui.set(CSLua.CustomKillSay.helper, table.concat(cmds, ', ') )
 				end
 			else
-				ui.set(CPLua.CustomKillSay.helper, 'Helper: type { to get suggestions' )
+				ui.set(CSLua.CustomKillSay.helper, 'Helper: type { to get suggestions' )
 			end
 		end
 	end)
 
 	client.set_event_callback('round_start', function()
-		--processTags(ui.get(CPLua.CustomKillSay.template))
+		--processTags(ui.get(CSLua.CustomKillSay.template))
 	end)
 	--#endregion
 
 	--#region Report Enemy Tool
-	CPLua.ReportTool = {}
-	CPLua.ReportTool.enable = ui.new_checkbox('Lua', 'B', 'Report Tool')
+	CSLua.ReportTool = {}
+	CSLua.ReportTool.enable = ui.new_checkbox('Lua', 'B', 'Report Tool')
 	
 	local ReportTypes = {
 		{'textabuse', 'Comms Abuse'},
@@ -963,9 +963,9 @@ function Initiate()
 		ReportTypeNames[#ReportTypeNames + 1] = ReportType[2]
 		ReportTypeRef[ReportType[2]] = ReportType[1]
 	end
-	CPLua.ReportTool.types = ui.new_multiselect('Lua', 'B', 'Types', ReportTypeNames)
-	CPLua.ReportTool.submit = ui.new_button('Lua', 'B', 'Report!', function()
-		local Types = ui.get(CPLua.ReportTool.types)
+	CSLua.ReportTool.types = ui.new_multiselect('Lua', 'B', 'Types', ReportTypeNames)
+	CSLua.ReportTool.submit = ui.new_button('Lua', 'B', 'Report!', function()
+		local Types = ui.get(CSLua.ReportTool.types)
 		local ReportTypes = ''
 		for i, v in pairs(Types) do
 			ReportTypes = ( i == 1 and ReportTypeRef[v] or ReportTypes..','..ReportTypeRef[v] )
@@ -987,34 +987,34 @@ function Initiate()
 		end
 	end)
 
-	ui.set_callback(CPLua.ReportTool.enable, function(self)
+	ui.set_callback(CSLua.ReportTool.enable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.ReportTool.types, Status)
-		ui.set_visible(CPLua.ReportTool.submit, Status)
+		ui.set_visible(CSLua.ReportTool.types, Status)
+		ui.set_visible(CSLua.ReportTool.submit, Status)
 	end)
-	ui.set_visible(CPLua.ReportTool.types, false)
-	ui.set_visible(CPLua.ReportTool.submit, false)
+	ui.set_visible(CSLua.ReportTool.types, false)
+	ui.set_visible(CSLua.ReportTool.submit, false)
 	--#endregion
 
 	--#region Crack Checker
-	CPLua.CrackTool = {state=false}
-	CPLua.CrackTool.enable = ui.new_checkbox('Lua', 'B', 'Crack Checker')
-	CPLua.CrackTool.customformatEnable = ui.new_checkbox('Lua', 'B', 'Custom Format')
-	CPLua.CrackTool.customformat = ui.new_textbox('Lua', 'B', ' ')
-	CPLua.CrackTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
-	CPLua.CrackTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
+	CSLua.CrackTool = {state=false}
+	CSLua.CrackTool.enable = ui.new_checkbox('Lua', 'B', 'Crack Checker')
+	CSLua.CrackTool.customformatEnable = ui.new_checkbox('Lua', 'B', 'Custom Format')
+	CSLua.CrackTool.customformat = ui.new_textbox('Lua', 'B', ' ')
+	CSLua.CrackTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
+	CSLua.CrackTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
 
-	ui.set_visible(CPLua.CrackTool.customformatEnable,  false)
+	ui.set_visible(CSLua.CrackTool.customformatEnable,  false)
 	
-	ui.set(CPLua.CrackTool.customformat, '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}')
+	ui.set(CSLua.CrackTool.customformat, '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}')
 
-	CPLua.QueueChatMessages = {
+	CSLua.QueueChatMessages = {
 		['msgs'] = {},
 		['state'] = false
 	}
 	
-	CPLua.QueueChatMessages.sendNext = function()
-		local NextMessage = CPLua.QueueChatMessages.msgs[1]
+	CSLua.QueueChatMessages.sendNext = function()
+		local NextMessage = CSLua.QueueChatMessages.msgs[1]
 		if ( NextMessage ) then
 			local type = NextMessage[1]
 			local msg = NextMessage[2]
@@ -1023,33 +1023,33 @@ function Initiate()
 	end
 
 	client.set_event_callback('player_chat', function (e)
-		if ( #CPLua.QueueChatMessages.msgs > 0 ) then
+		if ( #CSLua.QueueChatMessages.msgs > 0 ) then
 			local ent, name, text = e.entity, e.name, e.text
-			if ( ent == entity.get_local_player() and CPLua.QueueChatMessages.msgs[1][2]:find(esc(text)) ) then
+			if ( ent == entity.get_local_player() and CSLua.QueueChatMessages.msgs[1][2]:find(esc(text)) ) then
 				printDebug('Confirmed message: ', text)
 
-				if ( #CPLua.QueueChatMessages.msgs > 0 ) then
-					table.remove(CPLua.QueueChatMessages.msgs, 1)
-					client.delay_call(1, CPLua.QueueChatMessages.sendNext)
+				if ( #CSLua.QueueChatMessages.msgs > 0 ) then
+					table.remove(CSLua.QueueChatMessages.msgs, 1)
+					client.delay_call(1, CSLua.QueueChatMessages.sendNext)
 				end
 			end
 		end
 	end)
 
-	CPLua.ChatMethods = {
+	CSLua.ChatMethods = {
 		['Party Chat'] = function(msg)
-			PartyListAPI.SessionCommand('Game::Chat', string.format('run all xuid %s chat %s', CPPanorama.steamID, msg:gsub(' ', ' ')))
+			PartyListAPI.SessionCommand('Game::Chat', string.format('run all xuid %s chat %s', CSPanorama.steamID, msg:gsub(' ', ' ')))
 		end,
 		['Game Chat'] = function(msg)
-			CPLua.QueueChatMessages.msgs[#CPLua.QueueChatMessages.msgs + 1] = {'say', msg}
-			if ( #CPLua.QueueChatMessages.msgs == 1 ) then
-				CPLua.QueueChatMessages.sendNext()
+			CSLua.QueueChatMessages.msgs[#CSLua.QueueChatMessages.msgs + 1] = {'say', msg}
+			if ( #CSLua.QueueChatMessages.msgs == 1 ) then
+				CSLua.QueueChatMessages.sendNext()
 			end
 		end,
 		['Team Chat'] = function(msg)
-			CPLua.QueueChatMessages.msgs[#CPLua.QueueChatMessages.msgs + 1] = {'say_team', msg}
-			if ( #CPLua.QueueChatMessages.msgs == 1 ) then
-				CPLua.QueueChatMessages.sendNext()
+			CSLua.QueueChatMessages.msgs[#CSLua.QueueChatMessages.msgs + 1] = {'say_team', msg}
+			if ( #CSLua.QueueChatMessages.msgs == 1 ) then
+				CSLua.QueueChatMessages.sendNext()
 			end
 		end,
 		['Console'] = function(...)
@@ -1058,21 +1058,21 @@ function Initiate()
 	}
 	
 	if ( sendChatSuccess ) then
-		CPLua.ChatMethods['Local Chat'] = function(msg)
-			cp_SendChat(msg)
+		CSLua.ChatMethods['Local Chat'] = function(msg)
+			CS_SendChat(msg)
 		end
 	end
 
-	ui.set(CPLua.CrackTool.customformat)
+	ui.set(CSLua.CrackTool.customformat)
 
-	CPLua.CrackTool.CheckCrack = function(SteamID, Name, Callback)
+	CSLua.CrackTool.CheckCrack = function(SteamID, Name, Callback)
 		local URL = 'https://csmit195.me/api/lolzteam/' .. SteamID
 		http.request('GET', URL, function(success, response)
-			if not CPLua.CrackTool.state then return end
+			if not CSLua.CrackTool.state then return end
 			if not success or response.status ~= 200 then
 				print('[CRACK CHECKER] ', 'Error accessing our api to check ', Name, '\'s sale history. Trying again.');
 				printDebug(response.body);
-				return CPLua.CrackTool.CheckCrack(SteamID, Name, Callback)
+				return CSLua.CrackTool.CheckCrack(SteamID, Name, Callback)
 			end
 			local Response = json.parse(response.body)
 			if ( Response.error ) then
@@ -1103,28 +1103,28 @@ function Initiate()
 				ReplaceData.links = table.concat(Links, ', ')
 
 				local Default = '[CrackCheck] Acc {name} sold {times} times for {price}usd on LolzTeam, market ID: {marketID}'
-				if ( ui.get(CPLua.CrackTool.customformatEnable) ) then
-					Default = ui.get(CPLua.CrackTool.customformat)
+				if ( ui.get(CSLua.CrackTool.customformatEnable) ) then
+					Default = ui.get(CSLua.CrackTool.customformat)
 				end
 				local Msg = processTags(Default, ReplaceData);
-				for index, value in ipairs(ui.get(CPLua.CrackTool.output)) do
-					CPLua.ChatMethods[value](Msg)
+				for index, value in ipairs(ui.get(CSLua.CrackTool.output)) do
+					CSLua.ChatMethods[value](Msg)
 				end
 			end
 			Callback()
 		end)
 	end
 
-	CPLua.CrackTool.StartStop = function(uiIndex)
+	CSLua.CrackTool.StartStop = function(uiIndex)
 		local State = ui.name(uiIndex) == 'Start'
-		CPLua.CrackTool.state = State
-		ui.set_visible(CPLua.CrackTool.start, not State)
-		ui.set_visible(CPLua.CrackTool.stop, State)
+		CSLua.CrackTool.state = State
+		ui.set_visible(CSLua.CrackTool.start, not State)
+		ui.set_visible(CSLua.CrackTool.stop, State)
 		if ( State ) then
-			local Target = ui.get(CPLua.CrackTool.target)
+			local Target = ui.get(CSLua.CrackTool.target)
 			local Targets = {}
 			for Player=1, globals.maxplayers() do
-				if ( not CPLua.CrackTool.state ) then break end
+				if ( not CSLua.CrackTool.state ) then break end
 				local SteamXUID = GameStateAPI.GetPlayerXuidStringFromEntIndex(Player)
 				if ( SteamXUID and SteamXUID:len() == 17 ) then
 					if ( Target == 'Everyone' ) then
@@ -1140,68 +1140,68 @@ function Initiate()
 			if ( #Targets > 0 ) then
 				for i, v in ipairs(Targets) do
 					client.delay_call(0.1*(i-1), function()
-						CPLua.CrackTool.CheckCrack(v[1], v[2], function()
+						CSLua.CrackTool.CheckCrack(v[1], v[2], function()
 							Completed = Completed + 1
 							if ( Completed == #Targets ) then
-								ui.set_visible(CPLua.CrackTool.start, true)
-								ui.set_visible(CPLua.CrackTool.stop, false)
+								ui.set_visible(CSLua.CrackTool.start, true)
+								ui.set_visible(CSLua.CrackTool.stop, false)
 							end
 						end)
 					end)
 				end
 			elseif ( #Targets == 0 ) then
-				ui.set_visible(CPLua.CrackTool.start, true)
-				ui.set_visible(CPLua.CrackTool.stop, false)
+				ui.set_visible(CSLua.CrackTool.start, true)
+				ui.set_visible(CSLua.CrackTool.stop, false)
 			end
 		end
 	end
-	CPLua.CrackTool.start = ui.new_button('Lua', 'B', 'Start', CPLua.CrackTool.StartStop)
-	CPLua.CrackTool.stop = ui.new_button('Lua', 'B', 'Stop', CPLua.CrackTool.StartStop)
+	CSLua.CrackTool.start = ui.new_button('Lua', 'B', 'Start', CSLua.CrackTool.StartStop)
+	CSLua.CrackTool.stop = ui.new_button('Lua', 'B', 'Stop', CSLua.CrackTool.StartStop)
 
-	ui.set_callback(CPLua.CrackTool.enable, function(self)
+	ui.set_callback(CSLua.CrackTool.enable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.CrackTool.customformatEnable, Status)
-		ui.set_visible(CPLua.CrackTool.customformat, ui.get(CPLua.CrackTool.customformatEnable) and Status)
-		ui.set_visible(CPLua.CrackTool.target, Status)
-		ui.set_visible(CPLua.CrackTool.output, Status)
-		ui.set_visible(CPLua.CrackTool.start, not CPLua.CrackTool.state and Status)
-		ui.set_visible(CPLua.CrackTool.stop, CPLua.CrackTool.state and Status)
+		ui.set_visible(CSLua.CrackTool.customformatEnable, Status)
+		ui.set_visible(CSLua.CrackTool.customformat, ui.get(CSLua.CrackTool.customformatEnable) and Status)
+		ui.set_visible(CSLua.CrackTool.target, Status)
+		ui.set_visible(CSLua.CrackTool.output, Status)
+		ui.set_visible(CSLua.CrackTool.start, not CSLua.CrackTool.state and Status)
+		ui.set_visible(CSLua.CrackTool.stop, CSLua.CrackTool.state and Status)
 	end)
 
-	ui.set_callback(CPLua.CrackTool.customformatEnable, function(self)
+	ui.set_callback(CSLua.CrackTool.customformatEnable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.CrackTool.customformat, Status)
+		ui.set_visible(CSLua.CrackTool.customformat, Status)
 	end)
 	
-	ui.set_visible(CPLua.CrackTool.customformatEnable, false)
-	ui.set_visible(CPLua.CrackTool.customformat, false)
-	ui.set_visible(CPLua.CrackTool.target, false)
-	ui.set_visible(CPLua.CrackTool.output, false)
-	ui.set_visible(CPLua.CrackTool.start, false)
-	ui.set_visible(CPLua.CrackTool.stop, false)
+	ui.set_visible(CSLua.CrackTool.customformatEnable, false)
+	ui.set_visible(CSLua.CrackTool.customformat, false)
+	ui.set_visible(CSLua.CrackTool.target, false)
+	ui.set_visible(CSLua.CrackTool.output, false)
+	ui.set_visible(CSLua.CrackTool.start, false)
+	ui.set_visible(CSLua.CrackTool.stop, false)
 	--#endregion
 
 	--#region Face.it Checker
-	CPLua.FaceITTool = {state=false}
-	CPLua.FaceITTool.enable = ui.new_checkbox('Lua', 'B', 'FaceIT Checker')
-	CPLua.FaceITTool.customformatEnable = ui.new_checkbox('Lua', 'B', 'Custom Format')
-	CPLua.FaceITTool.customformat = ui.new_textbox('Lua', 'B', ' ')
-	CPLua.FaceITTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
-	CPLua.FaceITTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
+	CSLua.FaceITTool = {state=false}
+	CSLua.FaceITTool.enable = ui.new_checkbox('Lua', 'B', 'FaceIT Checker')
+	CSLua.FaceITTool.customformatEnable = ui.new_checkbox('Lua', 'B', 'Custom Format')
+	CSLua.FaceITTool.customformat = ui.new_textbox('Lua', 'B', ' ')
+	CSLua.FaceITTool.target = ui.new_combobox('Lua', 'B', 'Target', {'Everyone', 'Teammates', 'Enemies'})
+	CSLua.FaceITTool.output = ui.new_multiselect('Lua', 'B', 'Output', {'Local Chat', 'Party Chat', 'Game Chat', 'Team Chat', 'Console'})
 	
-	ui.set_visible(CPLua.FaceITTool.customformatEnable,  false)	
-	ui.set(CPLua.FaceITTool.customformat, '[FaceIT Checker] User {name} has a KD/R of {kdr}!')
+	ui.set_visible(CSLua.FaceITTool.customformatEnable,  false)	
+	ui.set(CSLua.FaceITTool.customformat, '[FaceIT Checker] User {name} has a KD/R of {kdr}!')
 
-	CPLua.FaceITTool.StartStop = function(uiIndex)
+	CSLua.FaceITTool.StartStop = function(uiIndex)
 		local State = ui.name(uiIndex) == 'Start'
-		CPLua.FaceITTool.state = State
-		ui.set_visible(CPLua.FaceITTool.start, not State)
-		ui.set_visible(CPLua.FaceITTool.stop, State)
+		CSLua.FaceITTool.state = State
+		ui.set_visible(CSLua.FaceITTool.start, not State)
+		ui.set_visible(CSLua.FaceITTool.stop, State)
 		if ( State ) then
-			local Target = ui.get(CPLua.FaceITTool.target)
+			local Target = ui.get(CSLua.FaceITTool.target)
 			local Targets = {}
 			for Player=1, globals.maxplayers() do
-				if ( not CPLua.FaceITTool.state ) then break end
+				if ( not CSLua.FaceITTool.state ) then break end
 				local SteamXUID = GameStateAPI.GetPlayerXuidStringFromEntIndex(Player)
 				if ( SteamXUID:len() > 5 ) then
 					if ( Target == 'Everyone' ) then
@@ -1215,12 +1215,12 @@ function Initiate()
 			end
 			local Completed = 0
 			if ( #Targets > 0 ) then
-				local OutputMethods = ui.get(CPLua.FaceITTool.output)
+				local OutputMethods = ui.get(CSLua.FaceITTool.output)
 				for i, v in ipairs(Targets) do
 					local URL = 'https://csmit195.me/api/faceit/' .. v[1]
 
 					http.request('GET', URL, function(success, response)
-						if not success or response.status ~= 200 or not CPLua.FaceITTool.state then return end
+						if not success or response.status ~= 200 or not CSLua.FaceITTool.state then return end
 						local data = json.parse(response.body)
 						if ( data and data.success ~= nil and data.success == false ) then
 							printDebug('well fuck, we found nothing')
@@ -1237,86 +1237,86 @@ function Initiate()
 							ReplaceData.matches = data.matches
 
 							local Default = '[FaceIT Checker] {name} has a faceit acc ({user}) with {win} chance over {matches} games!'
-							if ( ui.get(CPLua.FaceITTool.customformatEnable) ) then
-								Default = ui.get(CPLua.FaceITTool.customformat)
+							if ( ui.get(CSLua.FaceITTool.customformatEnable) ) then
+								Default = ui.get(CSLua.FaceITTool.customformat)
 							end
 							local Msg = processTags(Default, ReplaceData);
 							for index, value in ipairs(OutputMethods) do
-								CPLua.ChatMethods[value](Msg)
+								CSLua.ChatMethods[value](Msg)
 							end
 						end
 
 						Completed = Completed + 1
 						if ( Completed == #Targets ) then
-							CPLua.FaceITTool.state = false
+							CSLua.FaceITTool.state = false
 
-							ui.set_visible(CPLua.FaceITTool.start, true)
-							ui.set_visible(CPLua.FaceITTool.stop, false)
+							ui.set_visible(CSLua.FaceITTool.start, true)
+							ui.set_visible(CSLua.FaceITTool.stop, false)
 						end
 					end)
 				end
 			elseif ( #Targets == 0 ) then
-				ui.set_visible(CPLua.FaceITTool.start, true)
-				ui.set_visible(CPLua.FaceITTool.stop, false)
+				ui.set_visible(CSLua.FaceITTool.start, true)
+				ui.set_visible(CSLua.FaceITTool.stop, false)
 			end
 		end
 	end
-	CPLua.FaceITTool.start = ui.new_button('Lua', 'B', 'Start', CPLua.FaceITTool.StartStop)
-	CPLua.FaceITTool.stop = ui.new_button('Lua', 'B', 'Stop', CPLua.FaceITTool.StartStop)
+	CSLua.FaceITTool.start = ui.new_button('Lua', 'B', 'Start', CSLua.FaceITTool.StartStop)
+	CSLua.FaceITTool.stop = ui.new_button('Lua', 'B', 'Stop', CSLua.FaceITTool.StartStop)
 
-	ui.set_callback(CPLua.FaceITTool.enable, function(self)
+	ui.set_callback(CSLua.FaceITTool.enable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.FaceITTool.customformatEnable, Status)
-		ui.set_visible(CPLua.FaceITTool.customformat, ui.get(CPLua.FaceITTool.customformatEnable) and Status)
-		ui.set_visible(CPLua.FaceITTool.target, Status)
-		ui.set_visible(CPLua.FaceITTool.output, Status)
-		ui.set_visible(CPLua.FaceITTool.start, not CPLua.FaceITTool.state and Status)
-		ui.set_visible(CPLua.FaceITTool.stop, CPLua.FaceITTool.state and Status)
+		ui.set_visible(CSLua.FaceITTool.customformatEnable, Status)
+		ui.set_visible(CSLua.FaceITTool.customformat, ui.get(CSLua.FaceITTool.customformatEnable) and Status)
+		ui.set_visible(CSLua.FaceITTool.target, Status)
+		ui.set_visible(CSLua.FaceITTool.output, Status)
+		ui.set_visible(CSLua.FaceITTool.start, not CSLua.FaceITTool.state and Status)
+		ui.set_visible(CSLua.FaceITTool.stop, CSLua.FaceITTool.state and Status)
 	end)
 
-	ui.set_callback(CPLua.FaceITTool.customformatEnable, function(self)
+	ui.set_callback(CSLua.FaceITTool.customformatEnable, function(self)
 		local Status = ui.get(self)
-		ui.set_visible(CPLua.FaceITTool.customformat, Status)
+		ui.set_visible(CSLua.FaceITTool.customformat, Status)
 	end)
 	
-	ui.set_visible(CPLua.FaceITTool.customformatEnable, false)
-	ui.set_visible(CPLua.FaceITTool.customformat, false)
-	ui.set_visible(CPLua.FaceITTool.target, false)
-	ui.set_visible(CPLua.FaceITTool.output, false)
-	ui.set_visible(CPLua.FaceITTool.start, false)
-	ui.set_visible(CPLua.FaceITTool.stop, false)
+	ui.set_visible(CSLua.FaceITTool.customformatEnable, false)
+	ui.set_visible(CSLua.FaceITTool.customformat, false)
+	ui.set_visible(CSLua.FaceITTool.target, false)
+	ui.set_visible(CSLua.FaceITTool.output, false)
+	ui.set_visible(CSLua.FaceITTool.start, false)
+	ui.set_visible(CSLua.FaceITTool.stop, false)
 	--#endregion
 
 	--#region Party Chat Utilities
-	CPLua.PartyChatUtils = {}
-	CPLua.PartyChatUtils.enable = ui.new_checkbox('Lua', 'B', 'Party Chat Utilities')
+	CSLua.PartyChatUtils = {}
+	CSLua.PartyChatUtils.enable = ui.new_checkbox('Lua', 'B', 'Party Chat Utilities')
 
-	ui.set(CPLua.PartyChatUtils.enable, true)
+	ui.set(CSLua.PartyChatUtils.enable, true)
 
 	local LastTick = globals.realtime()
 	client.set_event_callback('post_render', function()
-		if ( globals.realtime() - LastTick > 0.25 and ui.get(CPLua.PartyChatUtils.enable) ) then
-			CPPanoramaMainMenu.PartyChatLoop()
+		if ( globals.realtime() - LastTick > 0.25 and ui.get(CSLua.PartyChatUtils.enable) ) then
+			CSPanoramaMainMenu.PartyChatLoop()
 			LastTick = globals.realtime()
 		end
 	end)
 	--#endregion
 
  	--#region DebugOptions
-	CPLua.DebugOptions = {}
-	CPLua.DebugOptions.enable = ui.new_checkbox('Lua', 'B', 'Debug Mode (console)')
-	ui.set_callback(CPLua.DebugOptions.enable, function(self)
+	CSLua.DebugOptions = {}
+	CSLua.DebugOptions.enable = ui.new_checkbox('Lua', 'B', 'Debug Mode (console)')
+	ui.set_callback(CSLua.DebugOptions.enable, function(self)
 		local Status = ui.get(self)
 		Options.debugMode = Status
-		CPPanorama.setDebugMode(Status)
+		CSPanorama.setDebugMode(Status)
 	end)
 	--#endregion
 
-	CPLua.Footer = ui.new_label('Lua', 'B', '=========  [   $CP Finish   ]  =========')
+	CSLua.Footer = ui.new_label('Lua', 'B', '=========  [   $CS Finish   ]  =========')
 
 	--#region Paint Draw Loops
 	client.set_event_callback('paint', function()
-		for index, func in ipairs(CPLua.loops) do
+		for index, func in ipairs(CSLua.loops) do
 			func()
 		end
 	end)
@@ -1396,7 +1396,7 @@ function Initiate()
 
 	-- Script UI
 	local MessageRepeater = {}
-	MessageRepeater.header = ui.new_label('Players', 'Adjustments', '=---------  [  $CP Adjustments  ]  ---------=')
+	MessageRepeater.header = ui.new_label('Players', 'Adjustments', '=---------  [  $CS Adjustments  ]  ---------=')
 	MessageRepeater.repeatMessages = ui.new_checkbox('Players', 'Adjustments', 'Repeat Messages')
 
 	local RepeatMethods = {'Shift Case'}
@@ -1503,7 +1503,7 @@ end
 
 function printDebug(...)
 	if ( not Options.debugMode ) then return end
-	print('[$CP]', ...)
+	print('[$CS]', ...)
 end
 
 function esc(x)
@@ -1524,7 +1524,7 @@ function getRankShortName(LongRankName)
 end
 
 -- Yoink
-sendChatSuccess, cp_SendChat = pcall(function()
+sendChatSuccess, CS_SendChat = pcall(function()
 	local signature = '\x55\x8B\xEC\x83\xEC\x08\x8B\x15\xCC\xCC\xCC\xCC\x0F\x57'
 	local signature_gHud = '\xB9\xCC\xCC\xCC\xCC\x88\x46\x09'
 	local signature_FindElement = '\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x57\x8B\xF9\x33\xF6\x39\x77\x28'
